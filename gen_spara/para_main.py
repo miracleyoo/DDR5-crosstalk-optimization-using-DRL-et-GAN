@@ -1,5 +1,6 @@
 import argparse
 import os
+import time
 import random
 import torch
 import pickle
@@ -11,10 +12,12 @@ import torch.utils.data
 import torchvision.datasets as dset
 import torchvision.transforms as transforms
 import torchvision.utils as vutils
+from tqdm import tqdm
+import numpy as np
 from torch.utils.data import Dataset, DataLoader
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataroot', default='../Datasets/all_data_channel_comb.pkl', required=True, help='path to dataset')
+parser.add_argument('--dataroot', default='../Datasets/all_data_channel_comb.pkl', help='path to dataset')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=2)
 parser.add_argument('--batchSize', type=int, default=64, help='input batch size')
 parser.add_argument('--imageSize', type=int, default=64, help='the height / width of the input image to network')
@@ -67,11 +70,11 @@ class SPara(Dataset):
         return len(self.dataset)
 
     def __getitem__(self, idx):
-        norm_dict = [1,4000,100,11910000000]
+        norm_dict = [1,4000,1,100,11910000000]
         inputs = np.array([i/j for i,j in zip(self.dataset[idx][:-1], norm_dict)])
         inputs = inputs[:,np.newaxis,np.newaxis]
         labels = self.dataset[idx][-1]
-        return inputs, labels
+        return torch.from_numpy(inputs).float(), torch.from_numpy(labels).float()
 
 dataset = SPara(opt)
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=opt.batchSize,
@@ -81,7 +84,6 @@ device = torch.device("cuda:0" if opt.cuda else "cpu")
 ngpu = int(opt.ngpu)
 nz = int(opt.nz)
 ngf = int(opt.ngf)
-ndf = int(opt.ndf)
 nc = 2
 
 
@@ -94,6 +96,13 @@ def weights_init(m):
         m.weight.data.normal_(1.0, 0.02)
         m.bias.data.fill_(0)
 
+def log(*args, end=None):
+    if end is None:
+        print(time.strftime("==> [%Y-%m-%d %H:%M:%S]", time.localtime()) + " " + "".join([str(s) for s in args]))
+    else:
+        print(time.strftime("==> [%Y-%m-%d %H:%M:%S]", time.localtime()) + " " + "".join([str(s) for s in args]),
+              end=end)
+            
 
 class Generator(nn.Module):
     def __init__(self, ngpu):
@@ -102,7 +111,7 @@ class Generator(nn.Module):
         self.main = nn.Sequential(
             # input is Z, going into a convolution
             nn.ConvTranspose2d(     nz, ngf, 4, 1, 0, bias=False),
-            nn.BatchNorm2d(ngf * 4),
+            nn.BatchNorm2d(ngf),
             nn.ReLU(True),
             # state size. ngf x 4 x 4
             nn.ConvTranspose2d(    ngf,      nc, 4, 2, 1, bias=False),
@@ -132,7 +141,7 @@ optimizer = optim.Adam(netG.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
 
 log("Start training!")
 for epoch in range(opt.niter):
-    for i, data in tqdm(enumerate(dataloader), desc="Training", total=len(train_loader), leave=False,
+    for i, data in tqdm(enumerate(dataloader), desc="Training", total=len(dataloader), leave=False,
                             unit='b'):
         inputs, labels = data
         inputs, labels = inputs.to(device), labels.to(device)
@@ -146,14 +155,7 @@ for epoch in range(opt.niter):
         optimizer.step()
 
     # print log
-    log('Epoch [%d/%d], Train Loss: %.4f' % (epoch + 1, opt.niter, loss)
+    log('Epoch [%d/%d], Train Loss: %.4f' % (epoch + 1, opt.niter, loss))
 
     # do checkpointing
     torch.save(netG.state_dict(), '%s/netG_epoch_%d.pth' % (opt.outf, epoch))
-
-def log(*args, end=None):
-    if end is None:
-        print(time.strftime("==> [%Y-%m-%d %H:%M:%S]", time.localtime()) + " " + "".join([str(s) for s in args]))
-    else:
-        print(time.strftime("==> [%Y-%m-%d %H:%M:%S]", time.localtime()) + " " + "".join([str(s) for s in args]),
-              end=end)
