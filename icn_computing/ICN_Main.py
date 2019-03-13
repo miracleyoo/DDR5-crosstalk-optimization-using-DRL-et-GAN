@@ -3,13 +3,17 @@
 
 import os
 import pickle
-from utils import *
+from .utils import *
 
 
-def sweep_files(filename, config):
-    print("Now processing: ", filename)
-
-    obj0 = sparameters(filename)
+def sweep_files(config, filename=None, obj0=None):
+    if filename is not None:
+        print("Now processing: ", filename)
+        obj0 = sparameters(filename)
+    elif obj0 is not None:
+        print("==> Using input s-parameters.")
+    else:
+        raise KeyError("==> Please at least input a filename or a s-parameter object!")
     s_freq = obj0.Frequencies
     s_freq = np.transpose(s_freq)
     portOrder = config[5]
@@ -118,6 +122,21 @@ def ICN(obj, victim, config):
     ct_total = (ct_nx**2 + ct_fx**2)**(0.5)
     return ct_nx, ct_fx, ct_total
 
+def get_ICN(obj0, fb=1.8*(10**9)):
+    # Configuration
+    ft = fb
+    fr = 0.75*fb  # the cut-off freq for the receiving filter [GHz]
+    Ant = 1000*(10**-3)  # Disturber Amplitude @near end [v]
+    Aft = 1000*(10**-3)  # Disturber Amplitude @far end [v]
+    portOrder = 2
+    sweepFileFigure = 0  # If plot figures while sweeping files: 0-NO 1-YES
+    mode = 1  # SE or DIFF mode: 1-SingleEnded 2-Differential
+    config = [Ant, Aft, fb, ft, fr, portOrder, sweepFileFigure, mode]
+
+    #  Sweep all the s-parameter files
+    temp = sweep_files(config, obj0=obj0)
+    FA = temp[0]
+    return sum(FA)/(len(FA))
 
 def main():
     # Configuration
