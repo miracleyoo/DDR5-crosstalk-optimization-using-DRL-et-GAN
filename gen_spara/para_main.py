@@ -69,7 +69,9 @@ class SParaData(Dataset):
         return len(self.dataset)
 
     def __getitem__(self, idx):
-        norm_dict = [1,4000,1,100,11910000000]
+        # norm_dict = [1,4000,1,100,11910000000]
+        norm_dict = [1,1,1,1,1]
+        
         inputs = np.array([i/j for i,j in zip(self.dataset[idx][:-1], norm_dict)])
         inputs = inputs[:,np.newaxis,np.newaxis]
         labels = self.dataset[idx][-1]
