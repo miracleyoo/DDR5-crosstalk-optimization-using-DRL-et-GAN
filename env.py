@@ -79,9 +79,9 @@ class DDR5(gym.Env):
         elif action ==4:
             tab_num += 1
         elif action ==5:
-            self.c1c2 = not self.c1c2
+            c1c2 = not c1c2
         elif action ==6:
-            self.spacing = not self.spacing
+            spacing = not spacing
             
         self.state = (c1c2, trace_len, spacing, tab_num)
 

@@ -77,7 +77,7 @@ def MDXT(sdd, vic, ptOrder):
                 NE_agg.append(2*i)
                 FE_agg.append(2*i+1)
 
-    print('NE_AGG:', NE_agg, '\nFE_AGG:', FE_agg, ' ')
+    # print('NE_AGG:', NE_agg, '\nFE_AGG:', FE_agg, ' ')
 
     ###################################
     #### Get all the NE and FE ########
@@ -102,8 +102,8 @@ def MDXT(sdd, vic, ptOrder):
         SUM_NE += np.abs(NE[jj, :])**2
         SUM_FE += np.abs(FE[jj, :])**2
 
-    MDNEXT = np.array([-10 * log10(k) for k in SUM_NE])
-    MDFEXT = np.array([-10 * log10(k) for k in SUM_FE])
+    MDNEXT = np.array([-10 * log10(k+1e-5) for k in SUM_NE])
+    MDFEXT = np.array([-10 * log10(k+1e-5) for k in SUM_FE])
 
     return MDNEXT, MDFEXT
 

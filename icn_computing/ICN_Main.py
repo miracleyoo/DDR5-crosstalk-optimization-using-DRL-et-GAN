@@ -11,7 +11,8 @@ def sweep_files(config, filename=None, obj0=None):
         print("Now processing: ", filename)
         obj0 = sparameters(filename)
     elif obj0 is not None:
-        print("==> Using input s-parameters.")
+        # print("==> Using input s-parameters.")
+        filename = 'temp.s8p'
     else:
         raise KeyError("==> Please at least input a filename or a s-parameter object!")
     s_freq = obj0.Frequencies
@@ -55,6 +56,7 @@ def sweep_files(config, filename=None, obj0=None):
         final_ct_total.append(ct_total[d, -1])
 
     ########### TXT output #########
+    if not os.path.exists('./source/cache/'): os.mkdir('./source/cache/')
     output_filename = './source/cache/' + \
         os.path.splitext((os.path.split(filename)[1]))[0]+'.txt'
     with open(output_filename, 'w+') as f:
