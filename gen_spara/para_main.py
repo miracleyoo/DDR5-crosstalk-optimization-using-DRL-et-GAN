@@ -23,7 +23,7 @@ parser.add_argument('--batchSize', type=int, default=64, help='input batch size'
 parser.add_argument('--nz', type=int, default=5, help='size of the input vector')
 parser.add_argument('--ngf', type=int, default=64)
 parser.add_argument('--niter', type=int, default=10, help='number of epochs to train for')
-parser.add_argument('--lr', type=float, default=0.0002, help='learning rate, default=0.0002')
+parser.add_argument('--lr', type=float, default=1, help='learning rate, default=0.0002')
 parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam. default=0.5')
 parser.add_argument('--cuda', action='store_true', help='enables cuda')
 parser.add_argument('--ngpu', type=int, default=1, help='number of GPUs to use')
@@ -95,7 +95,7 @@ def log(*args, end=None):
               end=end)
             
 netG = Generator(ngpu, nz=nz, ngf=ngf, nc=nc).to(device)
-netG.apply(weights_init)
+# netG.apply(weights_init)
 if opt.netG != '':
     netG.load_state_dict(torch.load(opt.netG))
 print(netG)
@@ -112,12 +112,12 @@ for epoch in range(opt.niter):
         inputs, labels = data
         labels = labels * 10e5
         inputs, labels = inputs.to(device), labels.to(device)
-
-        real_cpu = data[0].to(device)
-        batch_size = real_cpu.size(0)
+        print('inputs:',inputs[0],'labels:',labels[0])
 
         outputs = netG(inputs)
+
         loss = criterion(outputs, labels)
+        print('outputs:',outputs[0],'loss:',loss)
         loss.backward()
         optimizer.step()
 

@@ -11,8 +11,9 @@ BATCH_SIZE = 128
 LR = 0.01
 GAMMA = 0.90
 EPISILO = 0.9
-MEMORY_CAPACITY = 2000
+MEMORY_CAPACITY = 300
 Q_NETWORK_ITERATION = 100
+MAX_STEP = 100
 
 env = DDR5()
 env = env.unwrapped
@@ -114,7 +115,8 @@ def main():
     for i in range(episodes):
         state = env.reset()
         ep_reward = 0
-        while True:
+        counter = 0
+        while counter<MAX_STEP:
             action = dqn.choose_action(state)
             next_state, reward , done, info = env.step(action)
             x, x_dot, theta, theta_dot = next_state
@@ -129,6 +131,7 @@ def main():
             if done:
                 break
             state = next_state
+            counter+=1
         r = copy.copy(reward)
         reward_list.append(r)
         ax.set_xlim(0,300)
