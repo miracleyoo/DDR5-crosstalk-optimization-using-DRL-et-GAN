@@ -106,6 +106,8 @@ criterion = nn.MSELoss()
 optimizer = optim.Adam(netG.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
 
 log("Start training!")
+DECAY_RATE = 0.5
+lr = opt.lr
 for epoch in range(opt.niter):
     for i, data in tqdm(enumerate(dataloader), desc="Training", total=len(dataloader), leave=False,
                             unit='b'):
@@ -119,6 +121,8 @@ for epoch in range(opt.niter):
         loss = criterion(outputs, labels)
         print('outputs:',outputs[0],'loss:',loss)
         loss.backward()
+        lr = max(lr * DECAY_RATE, 0.0001)
+        optimizer = optim.Adam(netG.parameters(), lr=opt.lr)
         optimizer.step()
 
     # print log
