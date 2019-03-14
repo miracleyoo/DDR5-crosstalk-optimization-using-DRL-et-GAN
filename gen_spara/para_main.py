@@ -115,12 +115,12 @@ for epoch in range(opt.niter):
         inputs, labels = data
         labels = labels * 10e5
         inputs, labels = inputs.to(device), labels.to(device)
-        print('inputs:',inputs[0],'labels:',labels[0])
+        # print('inputs:',inputs[0],'labels:',labels[0])
 
         outputs = netG(inputs)
 
         loss = criterion(outputs, labels)
-        print('outputs:',outputs[0],'loss:',loss)
+        # print('outputs:',outputs[0],'loss:',loss)
         loss.backward()
 
         optimizer.step()
