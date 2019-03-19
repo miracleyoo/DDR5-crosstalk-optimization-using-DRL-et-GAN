@@ -10,7 +10,6 @@ import torch
 import pickle
 from gym import spaces, logger
 from gym.utils import seeding
-from icn_computing.ICN_Main import get_ICN
 from icn_computing.utils import SPara
 from gen_spara.para2icn import Generator
 import numpy as np
@@ -80,7 +79,7 @@ class DDR5(gym.Env):
     def step(self, action):
         assert self.action_space.contains(action), "%r (%s) invalid"%(action, type(action))
         state = self.state
-        c1c2, trace_len, spacing, tab_num = state
+        c1c2, spacing, dr, trace_len, tab_num = state
 
         # computation
         if action == 0:
@@ -106,15 +105,15 @@ class DDR5(gym.Env):
         elif action ==6:
             spacing = int(not spacing)
             
-        self.state = (c1c2, trace_len, spacing, tab_num)
+        self.state = (c1c2, spacing, dr, trace_len, tab_num)
 
         done =  False
-        icn = self.get_icn()#get_ICN(obj0=self.get_spara())
-        if icn<self.min_icn:
-            self.min_icn = icn
+        self.icn = self.get_icn()#get_ICN(obj0=self.get_spara())
+        if self.icn<self.min_icn:
+            self.min_icn = self.icn
             self.min_icn_state = state
-        reward = min(max((self.last_icn - icn)*100,-2),2)
-        self.last_icn = icn
+        reward = min(max((self.last_icn - self.icn)*100,-2),2)
+        self.last_icn = self.icn
 
         return np.array(self.state), reward, done, {}
 

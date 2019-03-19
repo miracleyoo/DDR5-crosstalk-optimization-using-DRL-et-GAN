@@ -124,8 +124,9 @@ def ICN(obj, victim, config):
     ct_total = (ct_nx**2 + ct_fx**2)**(0.5)
     return ct_nx, ct_fx, ct_total
 
-def get_ICN(obj0, fb=1.8*(10**9)):
+def get_ICN(obj0, fb_idx=0):
     # Configuration
+    fb = [1.8*(10**9), 3*(10**9), 10*(10**9)][fb_idx]
     ft = fb
     fr = 0.75*fb  # the cut-off freq for the receiving filter [GHz]
     Ant = 1000*(10**-3)  # Disturber Amplitude @near end [v]

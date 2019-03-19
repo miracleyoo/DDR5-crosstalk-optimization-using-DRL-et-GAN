@@ -1,6 +1,13 @@
 # Author: Zhongyang Zhang
 # E-mail: mirakuruyoo@gmail.com
 
+'''
+Result Sample: [0, 0, 0, 2000, 80, 0.011582059832497027]
+Meaning: constraint type(0->Constraint, 1->Normal), c1c2 type(0->2010, 1->3020), 
+         data rate(0->1.8*(10**9), 1->3*(10**9), 2->10*(10**9)), total length(1500~4000),
+         tab num(0~100), corresponding ICN value.
+'''
+
 import os
 import pickle
 from icn_computing.utils import *
@@ -19,9 +26,9 @@ CHANNEL = True
 C1C2_COMB = True
 
 
-def get_ICN(filename):
+def get_ICN(filename, fb_idx=0):
     # Configuration
-    fb = [1.8*(10**9), 3*(10**9), 10*(10**9)][0]
+    fb = [1.8*(10**9), 3*(10**9), 10*(10**9)][fb_idx]
     ft = fb
     fr = 0.75*fb  # the cut-off freq for the receiving filter [GHz]
     Ant = 1000*(10**-3)  # Disturber Amplitude @near end [v]
@@ -51,9 +58,10 @@ for idx, root in enumerate(roots):
         tab_num = [tab_num_dict[idx][os.path.splitext(i)[0]] for i in names]
         sub_paths = [path+i for i in names]
         for afile, anum in zip(sub_paths,tab_num):
-            icn = get_ICN(afile)
-            info_pack = [*para, idx, anum, icn]
-            all_info_pack.append(info_pack)
+            for fb_idx in range(3):
+                icn = get_ICN(afile, fb_idx=fb_idx)
+                info_pack = [*para, idx, anum, icn, fb_idx]
+                all_info_pack.append([info_pack[i] for i in [2,0,5,1,3,4]])
 
 filename = 'Datasets/direct_data'
 if CHANNEL:

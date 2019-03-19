@@ -119,7 +119,7 @@ def main():
         while counter<MAX_STEP:
             action = dqn.choose_action(state)
             next_state, reward , done, info = env.step(action)
-            print(next_state)
+            print(next_state, env.icn)
             x, x_dot, theta, theta_dot = next_state
 
             dqn.store_transition(state, action, reward, next_state)
