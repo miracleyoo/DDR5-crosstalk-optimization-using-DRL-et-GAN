@@ -162,7 +162,7 @@ def main():
     NE = []
     TT = []
     for filename in filenames:
-        temp = sweep_files(filename, config)
+        temp = sweep_files(config, filename)
         FA.append(temp[0])
         NE.append(temp[1])
         TT.append(temp[2])

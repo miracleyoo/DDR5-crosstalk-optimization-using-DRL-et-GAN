@@ -13,7 +13,7 @@ GAMMA = 0.90
 EPISILO = 0.9
 MEMORY_CAPACITY = 300
 Q_NETWORK_ITERATION = 100
-MAX_STEP = 100
+MAX_STEP = 300
 
 env = DDR5()
 env = env.unwrapped
@@ -119,6 +119,7 @@ def main():
         while counter<MAX_STEP:
             action = dqn.choose_action(state)
             next_state, reward , done, info = env.step(action)
+            print(next_state)
             x, x_dot, theta, theta_dot = next_state
 
             dqn.store_transition(state, action, reward, next_state)
@@ -132,6 +133,7 @@ def main():
                 break
             state = next_state
             counter+=1
+        print("min_icn:",env.min_icn,"min_icn_state:",env.min_icn_state)
         r = copy.copy(reward)
         reward_list.append(r)
         ax.set_xlim(0,300)

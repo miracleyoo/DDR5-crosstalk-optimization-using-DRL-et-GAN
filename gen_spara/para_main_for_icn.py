@@ -14,17 +14,16 @@ import torchvision.utils as vutils
 from tqdm import tqdm
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
-from module import *
-
+from para2icn import *
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataroot', default='../Datasets/all_data_channel_comb.pkl', help='path to dataset')
+parser.add_argument('--dataroot', default='../Datasets/direct_data_channel_comb.pkl', help='path to dataset')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=2)
 parser.add_argument('--batchSize', type=int, default=64, help='input batch size')
-parser.add_argument('--nz', type=int, default=5, help='size of the input vector')
+parser.add_argument('--nz', type=int, default=4, help='size of the input vector')
 parser.add_argument('--ngf', type=int, default=64)
-parser.add_argument('--niter', type=int, default=10, help='number of epochs to train for')
-parser.add_argument('--lr', type=float, default=0.1, help='learning rate, default=0.0002')
+parser.add_argument('--niter', type=int, default=150, help='number of epochs to train for')
+parser.add_argument('--lr', type=float, default=0.0001, help='learning rate, default=0.0002')
 parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam. default=0.5')
 parser.add_argument('--cuda', action='store_true', help='enables cuda')
 parser.add_argument('--ngpu', type=int, default=1, help='number of GPUs to use')
@@ -65,18 +64,19 @@ class SParaData(Dataset):
         """
         with open(opt.dataroot,'rb') as f:
             self.dataset = pickle.load(f)
+        
 
     def __len__(self):
         return len(self.dataset)
 
     def __getitem__(self, idx):
-        norm_dict = [1,4000,1,100,11910000000]
+        norm_dict = [1,4000,1,100]
         # norm_dict = [1,1,1,1,1]
         
         inputs = np.array([i/j for i,j in zip(self.dataset[idx][:-1], norm_dict)])
         inputs = inputs[:,np.newaxis,np.newaxis]
-        labels = self.dataset[idx][-1]
-        return torch.from_numpy(inputs).float(), torch.from_numpy(labels).float()
+        labels = self.dataset[idx][-1]/max([self.dataset[i][-1] for i in range(len(self.dataset))])
+        return torch.from_numpy(inputs).float(), np.float32(labels)#torch.from_numpy(labels).float()
 
 dataset = SParaData(opt)
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=opt.batchSize,
@@ -101,12 +101,9 @@ if opt.netG != '':
     netG.load_state_dict(torch.load(opt.netG))
 print(netG)
 
-criterion = nn.MSELoss()
-
-# setup optimizer
-
 log("Start training!")
-DECAY_RATE = 0.5
+criterion = nn.MSELoss()
+DECAY_RATE = 0.9
 lr = opt.lr
 
 for epoch in range(opt.niter):
@@ -114,20 +111,19 @@ for epoch in range(opt.niter):
     for i, data in tqdm(enumerate(dataloader), desc="Training", total=len(dataloader), leave=False,
                             unit='b'):
         inputs, labels = data
-        labels = labels * 10e5
+        labels = labels
         inputs, labels = inputs.to(device), labels.to(device)
         # print('inputs:',inputs[0],'labels:',labels[0])
 
         outputs = netG(inputs)
-
-        loss = criterion(outputs, labels)
-        print('outputs:',outputs[0],'loss:',loss)
+        loss = 10*criterion(outputs, labels)# - 0.001*torch.sum(torch.log10(outputs))
+        print('\nlabels:\n',labels.detach().numpy(),'\noutputs:\n',outputs.detach().numpy(),'\nloss:\n',loss.detach().numpy())
         loss.backward()
 
         optimizer.step()
-    lr = max(lr * DECAY_RATE, 0.0001)
+    # lr = max(lr * DECAY_RATE, 0.0001)
     # print log
     log('Epoch [%d/%d], Train Loss: %.4f' % (epoch + 1, opt.niter, loss))
 
     # do checkpointing
-torch.save(netG.state_dict(), '%s/netG_epoch_%d.pth' % (opt.outf, epoch+1))
+torch.save(netG.state_dict(), '%s/netG_direct_epoch_%d.pth' % (opt.outf, epoch+1))

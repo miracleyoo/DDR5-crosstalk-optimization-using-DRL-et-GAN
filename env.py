@@ -12,14 +12,14 @@ from gym import spaces, logger
 from gym.utils import seeding
 from icn_computing.ICN_Main import get_ICN
 from icn_computing.utils import SPara
-from gen_spara.module import Generator
+from gen_spara.para2icn import Generator
 import numpy as np
 
 
 class DDR5(gym.Env):
     def __init__(self):
         # length, tab_num
-        self.low  = np.array([0, 1500, 0, 0])
+        self.low  = np.array([0, 1500, 0, 10])
         self.high = np.array([1, 4000, 1, 100])
 
         # Action: 0->No Action 1->-length 2->+length 3->-num_tab 4->+num_tab 5->change_c1c2 6->change_spacing
@@ -31,36 +31,51 @@ class DDR5(gym.Env):
         self.state = None
         self.steps_beyond_done = None
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.min_icn = 1
+        self.min_icn_state = []
+
+        self.frequencies = pickle.load(open('./source/frequencies.pkl','rb'))
+        self.sparaNet = Generator().to(self.device)
+        checkpoint = torch.load('./gen_spara/source/netG_direct_epoch_100.pth', map_location=self.device.type)
+        self.sparaNet.load_state_dict(checkpoint)
+        self.spara = SPara()
+        self.norm_dict = [1,4000,1,100,11910000000]
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
 
     def get_spara(self):
-        frequencies = pickle.load(open('./source/frequencies.pkl','rb'))
-        sparaNet = Generator().to(self.device)
-        checkpoint = torch.load('./gen_spara/source/netG_epoch_10.pth', map_location=self.device.type)
-        sparaNet.load_state_dict(checkpoint)
-        spara = SPara()
-        norm_dict = [1,4000,1,100,11910000000]
         parameters = []
-        spara.Frequencies = np.array(frequencies)
-        for freq in frequencies:
-            inp = np.array([i/j for i,j in zip([*self.state, freq], norm_dict)])
+        self.spara.Frequencies = np.array(self.frequencies)
+        for freq in self.frequencies:
+            inp = np.array([i/j for i,j in zip([*self.state, freq], self.norm_dict)])
             inp = inp[np.newaxis,:,np.newaxis,np.newaxis]
             inp = torch.from_numpy(inp).float().to(self.device)
-            out = sparaNet(inp).detach().numpy().squeeze().transpose(1,2,0)/10e5
+            out = self.sparaNet(inp).detach().numpy().squeeze().transpose(1,2,0)
             parameters.append(out)
         parameters = np.array(parameters)
-        spara.Parameters = np.zeros(
+        self.spara.Parameters = np.zeros(
             (parameters.shape[0], parameters.shape[1], parameters.shape[1]), dtype=complex)
         for i in range(parameters.shape[0]):
             for j in range(parameters.shape[1]):
                 for k in range(parameters.shape[1]):
-                    spara.Parameters[i, j, k] = complex(
+                    self.spara.Parameters[i, j, k] = complex(
                         parameters[i, j, k, 0], parameters[i, j, k, 1])
-        spara.NumPorts = spara.Parameters.shape[1]
-        return spara
+        self.spara.NumPorts = self.spara.Parameters.shape[1]
+        return self.spara
+
+    def get_icn(self):
+        ICNNet = Generator().to(self.device)
+        checkpoint = torch.load('./gen_spara/source/netG_direct_epoch_100.pth', map_location=self.device.type)
+        ICNNet.load_state_dict(checkpoint)
+        norm_dict = [1,4000,1,100]
+        inp = np.array([i/j for i,j in zip(self.state, norm_dict)])
+        inp = inp[np.newaxis,:,np.newaxis,np.newaxis]
+        inp = torch.from_numpy(inp).float().to(self.device)
+        out = ICNNet(inp).detach().numpy()
+        # print(out)
+        return out
 
     def step(self, action):
         assert self.action_space.contains(action), "%r (%s) invalid"%(action, type(action))
@@ -71,22 +86,33 @@ class DDR5(gym.Env):
         if action == 0:
            pass
         if action == 1:
-            trace_len -= 1
+            trace_len -= 10
+            if trace_len<self.low[1]:
+                trace_len +=20
         elif action == 2:
-            trace_len += 1
+            trace_len += 10
+            if trace_len>self.high[1]:
+                trace_len -=20
         elif action ==3:
             tab_num -= 1
+            if tab_num<self.low[3]:
+                tab_num +=2
         elif action ==4:
             tab_num += 1
+            if tab_num>self.high[3]:
+                tab_num -=2
         elif action ==5:
-            c1c2 = not c1c2
+            c1c2 = int(not c1c2)
         elif action ==6:
-            spacing = not spacing
+            spacing = int(not spacing)
             
         self.state = (c1c2, trace_len, spacing, tab_num)
 
         done =  False
-        icn = get_ICN(obj0=self.get_spara())
+        icn = self.get_icn()#get_ICN(obj0=self.get_spara())
+        if icn<self.min_icn:
+            self.min_icn = icn
+            self.min_icn_state = state
         reward = min(max((self.last_icn - icn)*100,-2),2)
         self.last_icn = icn
 
@@ -95,5 +121,5 @@ class DDR5(gym.Env):
     def reset(self):
         self.state = [self.np_random.randint(self.low[i],self.high[i]) for i in range(len(self.low))]
         self.steps_beyond_done = None
-        self.last_icn = get_ICN(obj0=self.get_spara())
+        self.last_icn = self.get_icn()#get_ICN(obj0=self.get_spara())
         return np.array(self.state)
