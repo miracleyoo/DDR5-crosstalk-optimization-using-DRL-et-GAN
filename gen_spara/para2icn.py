@@ -1,7 +1,7 @@
 import torch.nn as nn
 
 class Generator0(nn.Module):
-    def __init__(self, ngpu=1, nz=4, ngf=64, nc=2):
+    def __init__(self, ngpu=1, nz=5, ngf=64, nc=2):
         super(Generator, self).__init__()
         self.nz = nz
         self.ngpu = ngpu
@@ -26,7 +26,7 @@ class Generator0(nn.Module):
 
 
 class Generator(nn.Module):
-    def __init__(self, ngpu=1, nz=4, ngf=64, nc=2):
+    def __init__(self, ngpu=1, nz=5, ngf=64, nc=2):
         super(Generator, self).__init__()
         self.nc = nc
         self.ngpu = ngpu

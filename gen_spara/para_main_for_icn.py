@@ -17,10 +17,10 @@ from torch.utils.data import Dataset, DataLoader
 from para2icn import *
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataroot', default='../Datasets/direct_data_channel_comb.pkl', help='path to dataset')
+parser.add_argument('--dataroot', default='../Datasets/direct_expanded_data_channel_comb.pkl', help='path to dataset')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=2)
 parser.add_argument('--batchSize', type=int, default=64, help='input batch size')
-parser.add_argument('--nz', type=int, default=4, help='size of the input vector')
+parser.add_argument('--nz', type=int, default=5, help='size of the input vector')
 parser.add_argument('--ngf', type=int, default=64)
 parser.add_argument('--niter', type=int, default=150, help='number of epochs to train for')
 parser.add_argument('--lr', type=float, default=0.0001, help='learning rate, default=0.0002')
@@ -64,15 +64,14 @@ class SParaData(Dataset):
         """
         with open(opt.dataroot,'rb') as f:
             self.dataset = pickle.load(f)
+        with open('../source/val_range.pkl','rb') as f:
+            self.val_range = pickle.load(f)
         
-
     def __len__(self):
         return len(self.dataset)
 
     def __getitem__(self, idx):
-        norm_dict = [1,4000,1,100]
-        # norm_dict = [1,1,1,1,1]
-        
+        norm_dict = self.val_range[1]        
         inputs = np.array([i/j for i,j in zip(self.dataset[idx][:-1], norm_dict)])
         inputs = inputs[:,np.newaxis,np.newaxis]
         labels = self.dataset[idx][-1]/max([self.dataset[i][-1] for i in range(len(self.dataset))])
@@ -117,7 +116,7 @@ for epoch in range(opt.niter):
 
         outputs = netG(inputs)
         loss = 10*criterion(outputs, labels)# - 0.001*torch.sum(torch.log10(outputs))
-        print('\nlabels:\n',labels.detach().numpy(),'\noutputs:\n',outputs.detach().numpy(),'\nloss:\n',loss.detach().numpy())
+        # print('\nlabels:\n',labels.detach().numpy(),'\noutputs:\n',outputs.detach().numpy(),'\nloss:\n',loss.detach().numpy())
         loss.backward()
 
         optimizer.step()
