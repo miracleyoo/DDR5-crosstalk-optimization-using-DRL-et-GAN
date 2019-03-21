@@ -99,12 +99,6 @@ class DQN():
         loss.backward()
         self.optimizer.step()
 
-def reward_func(env, x, x_dot, theta, theta_dot):
-    r1 = (env.x_threshold - abs(x))/env.x_threshold - 0.5
-    r2 = (env.theta_threshold_radians - abs(theta)) / env.theta_threshold_radians - 0.5
-    reward = r1 + r2
-    return reward
-
 def main():
     dqn = DQN()
     episodes = 400
@@ -120,7 +114,6 @@ def main():
             action = dqn.choose_action(state)
             next_state, reward , done, info = env.step(action)
             print(next_state, reward)
-            x, x_dot, theta, theta_dot = next_state
 
             dqn.store_transition(state, action, reward, next_state)
             ep_reward += reward

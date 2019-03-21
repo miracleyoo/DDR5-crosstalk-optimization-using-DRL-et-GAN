@@ -22,7 +22,7 @@ parser.add_argument('--workers', type=int, help='number of data loading workers'
 parser.add_argument('--batchSize', type=int, default=64, help='input batch size')
 parser.add_argument('--nz', type=int, default=5, help='size of the input vector')
 parser.add_argument('--ngf', type=int, default=64)
-parser.add_argument('--niter', type=int, default=150, help='number of epochs to train for')
+parser.add_argument('--niter', type=int, default=10, help='number of epochs to train for')
 parser.add_argument('--lr', type=float, default=0.0001, help='learning rate, default=0.0002')
 parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam. default=0.5')
 parser.add_argument('--cuda', action='store_true', help='enables cuda')
@@ -71,7 +71,7 @@ class SParaData(Dataset):
         return len(self.dataset)
 
     def __getitem__(self, idx):
-        norm_dict = self.val_range[1]        
+        norm_dict = self.val_range["high"]
         inputs = np.array([i/j for i,j in zip(self.dataset[idx][:-1], norm_dict)])
         inputs = inputs[:,np.newaxis,np.newaxis]
         labels = self.dataset[idx][-1]/max([self.dataset[i][-1] for i in range(len(self.dataset))])

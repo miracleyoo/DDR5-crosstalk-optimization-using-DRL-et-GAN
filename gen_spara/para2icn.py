@@ -7,10 +7,13 @@ class Generator0(nn.Module):
         self.ngpu = ngpu
         self.main = nn.Sequential(
             nn.Linear(nz, ngf*4),
+            nn.BatchNorm1d(ngf*4),
             nn.ReLU(),
             nn.Linear(ngf*4, ngf*2),
+            nn.BatchNorm1d(ngf*2),
             nn.ReLU(),
             nn.Linear(ngf*2, ngf),
+            nn.BatchNorm1d(ngf),
             nn.ReLU(),
             nn.Linear(ngf, 1),
             nn.Sigmoid()
@@ -36,11 +39,14 @@ class Generator(nn.Module):
             nn.ReLU(True),
             # state size. ngf x 4 x 4
             nn.ConvTranspose2d(    ngf,      nc, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(nc),
             nn.ReLU(True)
         )
             # state size. nc x 8 x 8
         self.main2 = nn.Sequential(
             nn.Linear(nc*8*8, ngf),
+            nn.BatchNorm1d(ngf),
+            nn.ReLU(),
             nn.Linear(ngf, 1),
             nn.Sigmoid()
         )

@@ -63,7 +63,7 @@ for idx, root in enumerate(roots):
         for afile, anum in zip(sub_paths,tab_num):
             for fb_idx in DR_TATBLE:
                 icn = get_ICN(afile, fb_idx=fb_idx)
-                info_pack = [*para, idx, anum, icn, fb_idx]
+                info_pack = [*para, idx, anum, icn, np.around(fb_idx,2)]
                 all_info_pack.append([info_pack[i] for i in [2,0,5,1,3,4]])
 
 filename = 'Datasets/direct_expanded_data'

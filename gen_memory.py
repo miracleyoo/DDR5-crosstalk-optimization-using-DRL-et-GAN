@@ -11,18 +11,17 @@ ACT_TABLE = np.array([2,0,1])
 
 dataset = pickle.load(open("Datasets/all_data_channel_comb.pkl","rb"))
 val_range = pickle.load(open("source/val_range.pkl","rb"))
-NUM_TABLE = np.zeros_like(dataset)
+NUM_TABLE = np.zeros([len(set([data[i] for data in dataset])) for i in range(4)])
 data_shape = NUM_TABLE.shape
-for i in set([data[0] for data in dataset]):
-    for j in set([data[1] for data in dataset]):
-        for k in set([data[2] for data in dataset]):
-            for l in set([data[3] for data in dataset]):
-                rows = [row for row in x if row[0]==i and row[1]==j and row[2]==k and row[3]==l]
+for i_idx, i in enumerate(set([data[0] for data in dataset])):
+    for j_idx, j in enumerate(set([data[1] for data in dataset])):
+        for k_idx, k in enumerate(set([data[2] for data in dataset])):
+            for l_idx, l in enumerate(set([data[3] for data in dataset])):
+                rows = [row for row in dataset if row[0]==i and row[1]==j and row[2]==k and row[3]==l]
                 rows = sorted(rows,key=lambda x:x[-1])
-
-
-
-
+                print(i_idx,j_idx,k_idx,l_idx)
+                if len(rows)>0:
+                    NUM_TABLE[i_idx,j_idx,k_idx,l_idx] = rows[0][-2]
 
 
 memory = []

@@ -18,14 +18,17 @@ import numpy as np
 class DDR5(gym.Env):
     def __init__(self):
         # length, tab_num
-        self.low  = np.array([0, 0])
-        self.high = np.array([1, 100])
+        # self.low  = np.array([0, 0])
+        # self.high = np.array([1, 100])
+        with open('./source/val_range.pkl','rb') as f:
+            self.val_range = pickle.load(f)
+        self.norm_dict = self.val_range["high"]
         # (c1c2, spacing, dr, trace_len, tab_num)
-        self.state_low = np.array([0,0,0,0,0])
-        self.state_high = np.array([1,1,2,3,100])
+        self.low = np.array(self.val_range["low"])
+        self.high = np.array(self.val_range["high"])
 
         # Action: 0->No Action 1->-num_tab 2->+num_tab 3->change_c1c2
-        self.action_space = spaces.Discrete(4)
+        self.action_space = spaces.Discrete(3)
         self.observation_space = spaces.Box(self.low, self.high, dtype=np.float32)
         self.reward_range = (-2,2)
 
@@ -38,10 +41,10 @@ class DDR5(gym.Env):
 
         self.frequencies = pickle.load(open('./source/frequencies.pkl','rb'))
         self.sparaNet = Generator().to(self.device)
-        checkpoint = torch.load('./gen_spara/source/netG_direct_epoch_100.pth', map_location=self.device.type)
+        checkpoint = torch.load('./gen_spara/source/netG_direct_epoch_10.pth', map_location=self.device.type)
         self.sparaNet.load_state_dict(checkpoint)
         self.spara = SPara()
-        self.norm_dict = [1,100]
+
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -69,10 +72,9 @@ class DDR5(gym.Env):
 
     def get_icn(self):
         ICNNet = Generator().to(self.device)
-        checkpoint = torch.load('./gen_spara/source/netG_direct_epoch_100.pth', map_location=self.device.type)
+        checkpoint = torch.load('./gen_spara/source/netG_direct_epoch_10.pth', map_location=self.device.type)
         ICNNet.load_state_dict(checkpoint)
-        norm_dict = [1,4000,1,100]
-        inp = np.array([i/j for i,j in zip(self.state, norm_dict)])
+        inp = np.array([i/j for i,j in zip(self.state, self.norm_dict)])
         inp = inp[np.newaxis,:,np.newaxis,np.newaxis]
         inp = torch.from_numpy(inp).float().to(self.device)
         out = ICNNet(inp).detach().numpy()
@@ -81,7 +83,7 @@ class DDR5(gym.Env):
     def step(self, action):
         assert self.action_space.contains(action), "%r (%s) invalid"%(action, type(action))
         state = self.state
-        c1c2, spacing, dr, trace_len, tab_num = state
+        spacing, c1c2, dr, trace_len, tab_num = state
 
         # computation
         if action == 0:
@@ -97,20 +99,22 @@ class DDR5(gym.Env):
         elif action ==3:
             c1c2 = int(not c1c2)
             
-        self.state = (c1c2, spacing, dr, trace_len, tab_num)
+        self.state = (spacing, c1c2, dr, trace_len, tab_num)
 
         done =  False
         self.icn = self.get_icn()
         if self.icn<self.min_icn:
             self.min_icn = self.icn
             self.min_icn_state = state
-        reward = min(max((self.last_icn - self.icn)*100,-2),2)
+        reward = min(max((self.last_icn - self.icn)*100,-2),2)-0.1*(self.last_icn == self.icn)
         self.last_icn = self.icn
 
         return np.array(self.state), reward, done, {}
 
     def reset(self):
-        self.state = [self.np_random.randint(self.state_low[i],self.state_high[i]) for i in range(len(self.state_high))]
+        # self.state = [self.np_random.randint(self.low[i],self.high[i]) for i in range(len(self.high))]
+        self.state = [0,0,1.8,1.5,self.np_random.randint(self.low[-1],self.high[-1])]
+    
         self.steps_beyond_done = None
         self.last_icn = self.get_icn()
         return np.array(self.state)
