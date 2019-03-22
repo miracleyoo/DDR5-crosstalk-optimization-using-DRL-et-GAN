@@ -11,7 +11,7 @@ import pickle
 from gym import spaces, logger
 from gym.utils import seeding
 from icn_computing.utils import SPara
-from gen_spara.para2icn import Generator
+from gen_spara.para2icn import *
 import numpy as np
 
 
@@ -40,7 +40,7 @@ class DDR5(gym.Env):
         self.min_icn_state = []
 
         self.frequencies = pickle.load(open('./source/frequencies.pkl','rb'))
-        self.sparaNet = Generator().to(self.device)
+        self.sparaNet = Generator1().to(self.device)
         checkpoint = torch.load('./gen_spara/source/netG_direct_epoch_10.pth', map_location=self.device.type)
         self.sparaNet.load_state_dict(checkpoint)
         self.spara = SPara()

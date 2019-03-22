@@ -94,7 +94,7 @@ def log(*args, end=None):
         print(time.strftime("==> [%Y-%m-%d %H:%M:%S]", time.localtime()) + " " + "".join([str(s) for s in args]),
               end=end)
             
-netG = Generator(ngpu, nz=nz, ngf=ngf, nc=nc).to(device)
+netG = Generator1(ngpu, nz=nz, ngf=ngf, nc=nc).to(device)
 # netG.apply(weights_init)
 if opt.netG != '':
     netG.load_state_dict(torch.load(opt.netG))

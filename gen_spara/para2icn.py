@@ -2,7 +2,7 @@ import torch.nn as nn
 
 class Generator0(nn.Module):
     def __init__(self, ngpu=1, nz=5, ngf=64, nc=2):
-        super(Generator, self).__init__()
+        super(Generator0, self).__init__()
         self.nz = nz
         self.ngpu = ngpu
         self.main = nn.Sequential(
@@ -28,9 +28,34 @@ class Generator0(nn.Module):
         return output.squeeze()
 
 
-class Generator(nn.Module):
+class Generator1(nn.Module):
     def __init__(self, ngpu=1, nz=5, ngf=64, nc=2):
-        super(Generator, self).__init__()
+        super(Generator1, self).__init__()
+        self.nz = nz
+        self.ngpu = ngpu
+        self.main = nn.Sequential(
+            nn.Linear(nz, ngf*4),
+            nn.LeakyReLU(),
+            nn.BatchNorm1d(ngf*4),
+            nn.Linear(ngf*4, ngf),
+            nn.Tanh(),
+            nn.Dropout(),
+            nn.BatchNorm1d(ngf),
+            nn.Linear(ngf, 1)
+        )
+
+    def forward(self, x):
+        x = x.view(-1, self.nz)
+        if x.is_cuda and self.ngpu > 1:
+            output = nn.parallel.data_parallel(self.main, x, range(self.ngpu))
+        else:
+            output = self.main(x)
+        return output.squeeze()
+
+
+class Generator2(nn.Module):
+    def __init__(self, ngpu=1, nz=5, ngf=64, nc=2):
+        super(Generator2, self).__init__()
         self.nc = nc
         self.ngpu = ngpu
         self.main1 = nn.Sequential(
