@@ -40,9 +40,24 @@ class DDR5(gym.Env):
         self.min_icn_state = []
 
         self.frequencies = pickle.load(open('./source/frequencies.pkl','rb'))
-        self.sparaNet = Generator1().to(self.device)
-        checkpoint = torch.load('./gen_spara/source/netG_direct_epoch_10.pth', map_location=self.device.type)
-        self.sparaNet.load_state_dict(checkpoint)
+        # self.sparaNet = Generator1().to(self.device)
+        # checkpoint = torch.load('./gen_spara/source/netG_direct_epoch_10.pth', map_location=self.device.type)
+        # self.sparaNet.load_state_dict(checkpoint)
+        self.sparaNet = [[],[]]
+        PREFIX = "gen_spara/source/G0/G0NS_sep_L1_NEW_TO10/"
+        net_paths = [["netG0_direct_choice_0_0.pth","netG0_direct_choice_0_1.pth"],
+        ["netG0_direct_choice_1_0.pth","netG0_direct_choice_1_1.pth"]]
+        for idx_1 in range(2):
+            for idx_2 in range(2):
+                temp_net = Generator0NS(nz=3).to(self.device)
+                temp_net.load_state_dict(torch.load(PREFIX+net_paths[idx_1][idx_2], map_location=self.device.type))
+                temp_net.eval()
+                self.sparaNet[idx_1].append(temp_net)
+                del temp_net
+                # self.sparaNet[idx_1].append(Generator0NS(nz=3).to(self.device))
+                # checkpoint = torch.load(PREFIX+net_paths[idx_1][idx_2], map_location=self.device.type)
+                # self.sparaNet[idx_1][idx_2].load_state_dict(checkpoint)
+                # self.sparaNet[idx_1][idx_2].eval()
         self.spara = SPara()
 
 
@@ -71,13 +86,12 @@ class DDR5(gym.Env):
         return self.spara
 
     def get_icn(self):
-        ICNNet = Generator().to(self.device)
-        checkpoint = torch.load('./gen_spara/source/netG_direct_epoch_10.pth', map_location=self.device.type)
-        ICNNet.load_state_dict(checkpoint)
-        inp = np.array([i/j for i,j in zip(self.state, self.norm_dict)])
-        inp = inp[np.newaxis,:,np.newaxis,np.newaxis]
+        raw = np.array([i/j for i,j in zip(self.state, self.norm_dict)])
+        inp = raw[-3:][np.newaxis,:,np.newaxis,np.newaxis]
         inp = torch.from_numpy(inp).float().to(self.device)
-        out = ICNNet(inp).detach().numpy()
+        # print("inp:",inp,self.norm_dict,raw)
+        # out = ICNNet(inp).detach().numpy()
+        out = self.sparaNet[int(raw[0])][int(raw[1])](inp).detach().numpy()
         return out
 
     def step(self, action):
@@ -106,7 +120,7 @@ class DDR5(gym.Env):
         if self.icn<self.min_icn:
             self.min_icn = self.icn
             self.min_icn_state = state
-        reward = min(max((self.last_icn - self.icn)*100,-2),2)-0.1*(self.last_icn == self.icn)
+        reward = min(max((self.last_icn - self.icn)*10e3,-3),3)-0.1*(self.last_icn == self.icn)
         self.last_icn = self.icn
 
         return np.array(self.state), reward, done, {}

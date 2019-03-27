@@ -17,10 +17,10 @@ from torch.utils.data import Dataset, DataLoader
 from para2icn import *
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataroot', default='../Datasets/direct_expanded_data_channel_comb.pkl', help='path to dataset')
-parser.add_argument('--workers', type=int, help='number of data loading workers', default=2)
-parser.add_argument('--batchSize', type=int, default=64, help='input batch size')
-parser.add_argument('--nz', type=int, default=5, help='size of the input vector')
+parser.add_argument('--dataroot', default='../Datasets/direct_expanded_data_channel_comb_to10.pkl', help='path to dataset')
+parser.add_argument('--workers', type=int, help='number of data loading workers', default=0)
+parser.add_argument('--batchSize', type=int, default=256, help='input batch size')
+parser.add_argument('--nz', type=int, default=3, help='size of the input vector')
 parser.add_argument('--ngf', type=int, default=64)
 parser.add_argument('--niter', type=int, default=10, help='number of epochs to train for')
 parser.add_argument('--lr', type=float, default=0.0001, help='learning rate, default=0.0002')
@@ -34,10 +34,12 @@ parser.add_argument('--manualSeed', type=int, help='manual seed')
 opt = parser.parse_args()
 print(opt)
 
-try:
-    os.makedirs(opt.outf)
-except OSError:
-    pass
+def log(*args, end=None):
+    if end is None:
+        print(time.strftime("==> [%Y-%m-%d %H:%M:%S]", time.localtime()) + " " + "".join([str(s) for s in args]))
+    else:
+        print(time.strftime("==> [%Y-%m-%d %H:%M:%S]", time.localtime()) + " " + "".join([str(s) for s in args]),
+              end=end)
 
 if opt.manualSeed is None:
     opt.manualSeed = random.randint(1, 10000)
@@ -54,7 +56,7 @@ if torch.cuda.is_available() and not opt.cuda:
 class SParaData(Dataset):
     """Face Landmarks dataset."""
 
-    def __init__(self, opt):
+    def __init__(self, opt, choice):
         """
         Args:
             csv_file (string): Path to the csv file with annotations.
@@ -66,62 +68,49 @@ class SParaData(Dataset):
             self.dataset = pickle.load(f)
         with open('../source/val_range.pkl','rb') as f:
             self.val_range = pickle.load(f)
+        self.dataset = [i for i in self.dataset if i[0]==choice[0] and i[1]==choice[1]]
         
     def __len__(self):
         return len(self.dataset)
 
     def __getitem__(self, idx):
-        norm_dict = self.val_range["high"]
-        inputs = np.array([i/j for i,j in zip(self.dataset[idx][:-1], norm_dict)])
+        norm_dict = self.val_range["high"][2:]
+        inputs = np.array([i/j for i,j in zip(self.dataset[idx][2:-1], norm_dict)])
         inputs = inputs[:,np.newaxis,np.newaxis]
         labels = self.dataset[idx][-1]/max([self.dataset[i][-1] for i in range(len(self.dataset))])
         return torch.from_numpy(inputs).float(), np.float32(labels)#torch.from_numpy(labels).float()
-
-dataset = SParaData(opt)
-dataloader = torch.utils.data.DataLoader(dataset, batch_size=opt.batchSize,
-                                         shuffle=True, num_workers=int(opt.workers))
 
 device = torch.device("cuda:0" if opt.cuda else "cpu")
 ngpu = int(opt.ngpu)
 nz = int(opt.nz)
 ngf = int(opt.ngf)
 nc = 2
-
-def log(*args, end=None):
-    if end is None:
-        print(time.strftime("==> [%Y-%m-%d %H:%M:%S]", time.localtime()) + " " + "".join([str(s) for s in args]))
-    else:
-        print(time.strftime("==> [%Y-%m-%d %H:%M:%S]", time.localtime()) + " " + "".join([str(s) for s in args]),
-              end=end)
-            
-netG = Generator1(ngpu, nz=nz, ngf=ngf, nc=nc).to(device)
-# netG.apply(weights_init)
-if opt.netG != '':
-    netG.load_state_dict(torch.load(opt.netG))
-print(netG)
-
-log("Start training!")
-criterion = nn.MSELoss()
+criterion = nn.L1Loss()
 DECAY_RATE = 0.9
 lr = opt.lr
 
-for epoch in range(opt.niter):
-    optimizer = optim.Adam(netG.parameters(), lr=lr)
-    for i, data in tqdm(enumerate(dataloader), desc="Training", total=len(dataloader), leave=False,
-                            unit='b'):
-        inputs, labels = data
-        labels = labels
-        inputs, labels = inputs.to(device), labels.to(device)
-        # print('inputs:',inputs[0],'labels:',labels[0])
+PREFIX = "./source/G0/G0NS_sep_L1_New_TO10/"
+net_paths = [["netG0_direct_choice_0_0.pth","netG0_direct_choice_0_1.pth"],
+["netG0_direct_choice_1_0.pth","netG0_direct_choice_1_1.pth"]]
 
-        outputs = netG(inputs)
-        loss = 10*criterion(outputs, labels)# - 0.001*torch.sum(torch.log10(outputs))
-        # print('\nlabels:\n',labels.detach().numpy(),'\noutputs:\n',outputs.detach().numpy(),'\nloss:\n',loss.detach().numpy())
-        loss.backward()
+log("Start test!")
 
-        optimizer.step()
-    # lr = max(lr * DECAY_RATE, 0.0001)
-    log('Epoch [%d/%d], Train Loss: %.4f' % (epoch + 1, opt.niter, loss))
+for idx_1 in range(2):
+    for idx_2 in range(2):
+        min_loss = 1
+        dataset = SParaData(opt, (idx_1, idx_2))
+        dataloader = torch.utils.data.DataLoader(dataset, batch_size=opt.batchSize,
+                                                shuffle=True, num_workers=int(opt.workers))
 
-    # do checkpointing
-torch.save(netG.state_dict(), '%s/netG_direct_epoch_%d.pth' % (opt.outf, epoch+1))
+        netG = Generator0NS(ngpu, nz=nz, ngf=ngf, nc=nc).to(device)
+        checkpoint = torch.load(PREFIX+net_paths[idx_1][idx_2], map_location=device.type)
+        netG.load_state_dict(checkpoint)
+        netG.eval()
+
+        for i, data in enumerate(dataloader):
+            inputs, labels = data
+            inputs, labels = inputs.to(device), labels.to(device)
+
+            outputs = netG(inputs)
+            loss = criterion(outputs, labels)
+            print('labels:',labels.detach().numpy(),' outputs:',outputs.detach().numpy(),' delta:',outputs.detach().numpy()-labels.detach().numpy(), ' loss:',loss.detach().numpy())

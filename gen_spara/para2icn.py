@@ -1,7 +1,7 @@
 import torch.nn as nn
 
 class Generator0(nn.Module):
-    def __init__(self, ngpu=1, nz=5, ngf=64, nc=2):
+    def __init__(self, ngpu=1, nz=3, ngf=64, nc=2):
         super(Generator0, self).__init__()
         self.nz = nz
         self.ngpu = ngpu
@@ -28,8 +28,35 @@ class Generator0(nn.Module):
         return output.squeeze()
 
 
+class Generator0NS(nn.Module):
+    def __init__(self, ngpu=1, nz=3, ngf=64, nc=2):
+        super(Generator0NS, self).__init__()
+        self.nz = nz
+        self.ngpu = ngpu
+        self.main = nn.Sequential(
+            nn.Linear(nz, ngf*4),
+            nn.BatchNorm1d(ngf*4),
+            nn.ReLU(),
+            nn.Linear(ngf*4, ngf*2),
+            nn.BatchNorm1d(ngf*2),
+            nn.ReLU(),
+            nn.Linear(ngf*2, ngf),
+            nn.BatchNorm1d(ngf),
+            nn.ReLU(),
+            nn.Linear(ngf, 1),
+        )
+
+    def forward(self, x):
+        x = x.view(-1, self.nz)
+        if x.is_cuda and self.ngpu > 1:
+            output = nn.parallel.data_parallel(self.main, x, range(self.ngpu))
+        else:
+            output = self.main(x)
+        return output.squeeze()
+
+
 class Generator1(nn.Module):
-    def __init__(self, ngpu=1, nz=5, ngf=64, nc=2):
+    def __init__(self, ngpu=1, nz=3, ngf=64, nc=2):
         super(Generator1, self).__init__()
         self.nz = nz
         self.ngpu = ngpu
@@ -37,7 +64,10 @@ class Generator1(nn.Module):
             nn.Linear(nz, ngf*4),
             nn.LeakyReLU(),
             nn.BatchNorm1d(ngf*4),
-            nn.Linear(ngf*4, ngf),
+            nn.Linear(ngf*4, ngf*2),
+            nn.LeakyReLU(),
+            nn.BatchNorm1d(ngf*2),
+            nn.Linear(ngf*2, ngf),
             nn.Tanh(),
             nn.Dropout(),
             nn.BatchNorm1d(ngf),
@@ -54,7 +84,7 @@ class Generator1(nn.Module):
 
 
 class Generator2(nn.Module):
-    def __init__(self, ngpu=1, nz=5, ngf=64, nc=2):
+    def __init__(self, ngpu=1, nz=3, ngf=64, nc=2):
         super(Generator2, self).__init__()
         self.nc = nc
         self.ngpu = ngpu

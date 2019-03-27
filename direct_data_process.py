@@ -2,9 +2,9 @@
 # E-mail: mirakuruyoo@gmail.com
 
 '''
-Result Sample: [0, 0, 0, 1, 80, 0.011582059832497027]
+Result Sample: [0, 0, 1.8, 1.5, 80, 0.011582059832497027]
 Meaning: constraint type(0->Constraint, 1->Normal), c1c2 type(0->2010, 1->3020), 
-         data rate(0->1.8*(10**9), 1->3*(10**9), 2->10*(10**9)), total length(1500->0,2000->1,3000->2,4000->3),
+         data rate(n*(10**9)), total length(n*10^3),
          tab num(0~100), corresponding ICN value.
 '''
 
