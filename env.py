@@ -40,9 +40,6 @@ class DDR5(gym.Env):
         self.min_icn_state = []
 
         self.frequencies = pickle.load(open('./source/frequencies.pkl','rb'))
-        # self.sparaNet = Generator1().to(self.device)
-        # checkpoint = torch.load('./gen_spara/source/netG_direct_epoch_10.pth', map_location=self.device.type)
-        # self.sparaNet.load_state_dict(checkpoint)
         self.sparaNet = [[],[]]
         PREFIX = "gen_spara/source/G0/G0NS_sep_L1_NEW_TO10/"
         net_paths = [["netG0_direct_choice_0_0.pth","netG0_direct_choice_0_1.pth"],
@@ -112,7 +109,7 @@ class DDR5(gym.Env):
                 tab_num -=2
         elif action ==3:
             c1c2 = int(not c1c2)
-            
+
         self.state = (spacing, c1c2, dr, trace_len, tab_num)
 
         done =  False
@@ -120,7 +117,7 @@ class DDR5(gym.Env):
         if self.icn<self.min_icn:
             self.min_icn = self.icn
             self.min_icn_state = state
-        reward = min(max((self.last_icn - self.icn)*10e3,-3),3)-0.1*(self.last_icn == self.icn)
+        reward = min(max((self.last_icn - self.icn)*10e2,-1),1)#-0.1*(self.last_icn == self.icn)
         self.last_icn = self.icn
 
         return np.array(self.state), reward, done, {}
