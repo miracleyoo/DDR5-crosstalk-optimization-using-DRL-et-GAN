@@ -11,6 +11,7 @@ from torch.utils.data import Dataset, DataLoader
 from env import DDR5
 
 # hyper-parameters
+INIT_DQN = True
 BATCH_SIZE = 256
 LR = 0.001
 GAMMA = 0.90
@@ -18,7 +19,7 @@ EPISILO = 0.9
 MEMORY_CAPACITY = 512
 Q_NETWORK_ITERATION = 100
 MAX_STEP = 300
-INIT_TRAIN_EPOCH = 100
+INIT_TRAIN_EPOCH = 5
 INNER_NUM = 256
 
 env = DDR5()
@@ -35,10 +36,8 @@ class Net(nn.Module):
         super(Net, self).__init__()
         self.main = nn.Sequential(
             nn.Linear(NUM_STATES, INNER_NUM*4),
-            nn.BatchNorm1d(INNER_NUM*4),
             nn.LeakyReLU(),
             nn.Linear(INNER_NUM*4, INNER_NUM),
-            nn.BatchNorm1d(INNER_NUM),
             nn.LeakyReLU(),
             nn.Linear(INNER_NUM, NUM_ACTIONS)
             # nn.Sigmoid()
@@ -61,7 +60,7 @@ class InitData(Dataset):
         """
         with open('./source/generated_memory_to10.pkl', 'rb') as f:
             self.init_data = pickle.load(f)
-        self.init_data = [i for i in self.init_data if i[0][0]==0 and i[0][1]==0 and i[0][2]==1.8 and i[0][3]==1.5]
+        # self.init_data = [i for i in self.init_data if i[0][0]==0 and i[0][1]==0 and i[0][2]==1.8 and i[0][3]==1.5]
 
     def __len__(self):
         return len(self.init_data)
@@ -72,7 +71,6 @@ class InitData(Dataset):
 
 class DQN():
     """docstring for DQN"""
-
     def __init__(self):
         super(DQN, self).__init__()
         self.eval_net, self.target_net = Net(), Net()
@@ -152,14 +150,20 @@ class DQN():
                 self.optimizer.step()
             print("Epoch {} Finished training!".format(epoch))
             # Update the parameters of Target Net
-            self.target_net.load_state_dict(self.eval_net.state_dict())
-            self.eval_net.eval()
+            if epoch % 5 == 0:
+                self.target_net.load_state_dict(self.eval_net.state_dict())
+        self.eval_net.eval()
 
 
 def main():
     dqn = DQN()
     print("Pretraining on artificial memory...")
-    # dqn.init_learn()
+    if INIT_DQN:
+        dqn.init_learn()
+        torch.save(dqn.eval_net.state_dict(), './source/dqn_init_epoch_5.pth')
+    else:
+        dqn.eval_net.load_state_dict(torch.load('./source/dqn_init_epoch_5.pth'))
+        dqn.target_net.load_state_dict(dqn.eval_net.state_dict())
     episodes = 400
     print("Collecting Experience....")
     reward_list = []
@@ -173,10 +177,8 @@ def main():
             action = dqn.choose_action(state)
             next_state, reward, done, info = env.step(action)
             print(next_state, reward, env.icn)
-
             dqn.store_transition(state, action, reward, next_state)
             ep_reward += reward
-
             if dqn.memory_counter >= MEMORY_CAPACITY:
                 dqn.learn()
                 if done:

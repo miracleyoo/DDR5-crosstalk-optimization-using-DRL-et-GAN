@@ -93,19 +93,18 @@ class DDR5(gym.Env):
 
     def step(self, action):
         assert self.action_space.contains(action), "%r (%s) invalid"%(action, type(action))
-        state = self.state
-        spacing, c1c2, dr, trace_len, tab_num = state
+        spacing, c1c2, dr, trace_len, tab_num = self.state
 
         # computation
         if action == 0:
            pass
         elif action ==1:
             tab_num -= 1
-            if tab_num<self.low[3]:
+            if tab_num<self.low[-1]:
                 tab_num +=2
         elif action ==2:
             tab_num += 1
-            if tab_num>self.high[3]:
+            if tab_num>self.high[-1]:
                 tab_num -=2
         elif action ==3:
             c1c2 = int(not c1c2)
@@ -116,7 +115,7 @@ class DDR5(gym.Env):
         self.icn = self.get_icn()
         if self.icn<self.min_icn:
             self.min_icn = self.icn
-            self.min_icn_state = state
+            self.min_icn_state = self.state
         reward = min(max((self.last_icn - self.icn)*10e2,-1),1)#-0.1*(self.last_icn == self.icn)
         self.last_icn = self.icn
 
