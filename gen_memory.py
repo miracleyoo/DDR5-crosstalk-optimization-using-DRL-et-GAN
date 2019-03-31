@@ -10,9 +10,9 @@ LEN_TABLE = np.array([1.5,2.0,3.0,4.0])
 ACT_TABLE = np.array([2,0,1])
 DR_TATBLE = np.arange(0.5,10.05,0.05)
 
-COMPUTE_NUM_TABLE = False
+COMPUTE_NUM_TABLE = True
 if COMPUTE_NUM_TABLE:
-    dataset = pickle.load(open("Datasets/direct_expanded_data_channel_comb_to10.pkl","rb"))
+    dataset = pickle.load(open("Datasets/matlab_direct_expanded_data_channel_comb_to10.pkl","rb"))
     val_range = pickle.load(open("source/val_range.pkl","rb"))
     NUM_TABLE = np.zeros([len(set([data[i] for data in dataset])) for i in range(4)])
     data_shape = NUM_TABLE.shape
@@ -39,9 +39,9 @@ for i in range(data_shape[0]):
                 min_val = NUM_TABLE[i,j,k,l]
                 if min_val != 0:
                     if min_val != 78:
-                        ceil = 100
+                        ceil = 101
                     else:
-                        ceil = 70
+                        ceil = 71
                     for val in range(ceil):
                         if abs(val-min_val)>=10:
                             sign = np.sign(val-min_val)
