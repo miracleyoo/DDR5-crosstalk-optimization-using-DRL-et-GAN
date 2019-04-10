@@ -95,7 +95,7 @@ lr = opt.lr
 
 for idx_1 in range(2):
     for idx_2 in range(2):
-        min_loss = 1
+        min_loss = 10
         dataset = SParaData(opt, (idx_1, idx_2))
         dataloader = torch.utils.data.DataLoader(dataset, batch_size=opt.batchSize,
                                                 shuffle=True, num_workers=int(opt.workers))
