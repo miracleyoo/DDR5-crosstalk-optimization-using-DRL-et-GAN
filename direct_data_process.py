@@ -14,17 +14,17 @@ import numpy as np
 import matlab.engine
 from icn_computing.utils import *
 from icn_computing.ICN_Main import sweep_files
-# sys.path.append('./matlab_code')
 
 # idx = 0: Constraint; idx = 1: Normal
-roots = ['Datasets/meta/Normal_Tab_Constraint/','Datasets/meta/Normal_Tab_Normal_Spacing/']
-tab_num_dict = [{'x01':0,'x101':10,'x201':20,'x301':30,'x401':40,'x501':50,'x601':60,
-'x701':70,'x801':80,'x901':90,'x1001':100},
-{'x101':0,'x201':10,'x301':20,'x401':30,'x501':40,'x601':50,
-'x701':60,'x801':70,'x901':78}]
-c1c2_dict = {'2010':0,'3020':1}
-length_dict = {'1500':1.5,'2000':2.0,'3000':3.0,'4000':4.0}
-DR_TATBLE = np.arange(0.5,10.05,0.05)
+roots = ['Datasets/meta/Normal_Tab_Constraint/',
+         'Datasets/meta/Normal_Tab_Normal_Spacing/']
+tab_num_dict = [{'x01': 0, 'x101': 10, 'x201': 20, 'x301': 30, 'x401': 40, 'x501': 50, 'x601': 60,
+                 'x701': 70, 'x801': 80, 'x901': 90, 'x1001': 100},
+                {'x101': 0, 'x201': 10, 'x301': 20, 'x401': 30, 'x501': 40, 'x601': 50,
+                 'x701': 60, 'x801': 70, 'x901': 78}]
+c1c2_dict = {'2010': 0, '3020': 1}
+length_dict = {'1500': 1.5, '2000': 2.0, '3000': 3.0, '4000': 4.0}
+DR_TATBLE = np.arange(0.5, 10.05, 0.05)
 all_info_pack = []
 
 SEP = False
@@ -52,34 +52,40 @@ def get_ICN(filename, fb_idx):
     temp = sweep_files(config, filename)
     return sum(temp[0])/len(temp[0])
 
-eng=matlab.engine.start_matlab()
+
+eng = matlab.engine.start_matlab()
 eng.addpath('./matlab_code')
 
 
 for idx, root in enumerate(roots):
-    paras = [i for i in os.listdir(root) if os.path.isdir(root+i) and not i.startswith('.')]
+    paras = [i for i in os.listdir(root) if os.path.isdir(
+        root+i) and not i.startswith('.')]
     paths = [root+i+'/' for i in paras]
     if C1C2_COMB:
-        sep_paras = [[c1c2_dict[i.split('_')[0]],length_dict[i.split('_')[1]]] for i in paras]
+        sep_paras = [
+            [c1c2_dict[i.split('_')[0]], length_dict[i.split('_')[1]]] for i in paras]
     else:
-        sep_paras = [[int(i.split('_')[0][:2]), length_dict[i.split('_')[0][2:]],int(i.split('_')[1])] for i in paras]
-    for path, para in zip(paths,sep_paras):
+        sep_paras = [[int(i.split('_')[0][:2]), length_dict[i.split('_')[
+            0][2:]], int(i.split('_')[1])] for i in paras]
+    for path, para in zip(paths, sep_paras):
         names = [i for i in os.listdir(path) if i.endswith('.s8p')]
-        
+
         # TEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMP
-        if path == 'Datasets/meta/Normal_Tab_Normal_Spacing/2010_1500/': 
+        if path == 'Datasets/meta/Normal_Tab_Normal_Spacing/2010_1500/':
             tab_num = [tab_num_dict[0][os.path.splitext(i)[0]] for i in names]
         else:
-            tab_num = [tab_num_dict[idx][os.path.splitext(i)[0]] for i in names]
+            tab_num = [tab_num_dict[idx]
+                       [os.path.splitext(i)[0]] for i in names]
 
         sub_paths = [path+i for i in names]
-        for afile, anum in zip(sub_paths,tab_num):
+        for afile, anum in zip(sub_paths, tab_num):
             for fb_idx in DR_TATBLE:
                 # icn = get_ICN(afile, fb_idx=fb_idx)
                 icn = eng.icn_main(afile, float(fb_idx*10**9))
                 # Length, Spacing Mode, Tab Num, ICN, Data Rate
-                info_pack = [*para, idx, anum, icn, np.around(fb_idx,2)]
-                all_info_pack.append([info_pack[i] for i in [2,0,5,1,3,4]])
+                info_pack = [*para, idx, anum, icn, np.around(fb_idx, 2)]
+                all_info_pack.append([info_pack[i]
+                                      for i in [2, 0, 5, 1, 3, 4]])
 
 filename = 'Datasets/matlab_direct_expanded_data'
 if CHANNEL:
@@ -87,7 +93,6 @@ if CHANNEL:
 if C1C2_COMB:
     filename += '_comb'
 filename += '.pkl'
-with open(filename,'wb+') as f:
-    pickle.dump(all_info_pack,f)
-    print("==> Pre-processing of "+ filename +' finished!')
-    
+with open(filename, 'wb+') as f:
+    pickle.dump(all_info_pack, f)
+    print("==> Pre-processing of " + filename + ' finished!')

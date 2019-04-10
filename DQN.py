@@ -32,6 +32,7 @@ ENV_A_SHAPE = 0 if isinstance(
 
 class Net(nn.Module):
     """docstring for Net"""
+
     def __init__(self):
         super(Net, self).__init__()
         self.main = nn.Sequential(
@@ -50,6 +51,7 @@ class Net(nn.Module):
 
 class InitData(Dataset):
     """Face Landmarks dataset."""
+
     def __init__(self):
         """
         Args:
@@ -60,7 +62,7 @@ class InitData(Dataset):
         """
         with open('./source/generated_memory_to10.pkl', 'rb') as f:
             self.init_data = pickle.load(f)
-        # self.init_data = [i for i in self.init_data if i[0][0]==0 and i[0][1]==0 and i[0][2]==1.8 and i[0][3]==1.5]
+        self.init_data = [i for i in self.init_data if i[0][0]==0 and i[0][1]==0 and i[0][2]==1.8 and i[0][3]==1.5]
 
     def __len__(self):
         return len(self.init_data)
@@ -71,6 +73,7 @@ class InitData(Dataset):
 
 class DQN():
     """docstring for DQN"""
+
     def __init__(self):
         super(DQN, self).__init__()
         self.eval_net, self.target_net = Net(), Net()
@@ -142,7 +145,8 @@ class DQN():
                 # Q_eval
                 q_eval = self.eval_net(batch_state).gather(1, batch_action)
                 q_next = self.target_net(batch_next_state).detach()
-                q_target = batch_reward + GAMMA * q_next.max(1)[0].view(len(batch_reward), 1)
+                q_target = batch_reward + GAMMA * \
+                    q_next.max(1)[0].view(len(batch_reward), 1)
                 loss = self.loss_func(q_eval, q_target)
                 # Update
                 self.optimizer.zero_grad()
@@ -162,7 +166,8 @@ def main():
         dqn.init_learn()
         torch.save(dqn.eval_net.state_dict(), './source/dqn_init_epoch_5.pth')
     else:
-        dqn.eval_net.load_state_dict(torch.load('./source/dqn_init_epoch_5.pth'))
+        dqn.eval_net.load_state_dict(
+            torch.load('./source/dqn_init_epoch_5.pth'))
         dqn.target_net.load_state_dict(dqn.eval_net.state_dict())
     episodes = 400
     print("Collecting Experience....")
