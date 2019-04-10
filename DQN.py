@@ -11,7 +11,7 @@ from torch.utils.data import Dataset, DataLoader
 from env import DDR5
 
 # hyper-parameters
-INIT_DQN = True
+INIT_DQN = False
 BATCH_SIZE = 256
 LR = 0.001
 GAMMA = 0.90

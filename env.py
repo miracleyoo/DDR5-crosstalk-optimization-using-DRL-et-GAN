@@ -40,12 +40,12 @@ class DDR5(gym.Env):
 
         self.frequencies = pickle.load(open('./source/frequencies.pkl', 'rb'))
         self.sparaNet = [[], []]
-        PREFIX = "gen_spara/source/G0/G0NS_matlab_sep_L1_NEW_TO10/"
+        PREFIX = "gen_spara/source/G0/G0_gened_data_sep_L1_NEW_TO10_IMI/"
         net_paths = [["netG0_direct_choice_0_0.pth", "netG0_direct_choice_0_1.pth"],
                      ["netG0_direct_choice_1_0.pth", "netG0_direct_choice_1_1.pth"]]
         for idx_1 in range(2):
             for idx_2 in range(2):
-                temp_net = Generator0NS(nz=3).to(self.device)
+                temp_net = Generator0(nz=3).to(self.device)
                 temp_net.load_state_dict(torch.load(
                     PREFIX+net_paths[idx_1][idx_2], map_location=self.device.type))
                 temp_net.eval()

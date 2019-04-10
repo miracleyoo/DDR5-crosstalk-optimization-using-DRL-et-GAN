@@ -126,7 +126,7 @@ for idx_1 in range(2):
 
                 # TEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMP
                 # torch.save(netG.state_dict(), os.path.join(opt.outf, 'netG0_direct_choice_'+str(idx_1)+'_'+str(idx_2)+'.pth'))
-                torch.save(netG.state_dict(), os.path.join(opt.outf, 'netG0_direct_choice_imi'+str(idx_1)+'_'+str(idx_2)+'.pth'))
+                torch.save(netG.state_dict(), os.path.join(opt.outf, 'netG0_direct_choice_'+str(idx_1)+'_'+str(idx_2)+'.pth'))
                 log("Better model saved! New training loss:%f"%(train_loss))
             log('Epoch [%d/%d], Train Loss: %.6f' % (epoch + 1, opt.niter, train_loss))
         # exit()

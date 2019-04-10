@@ -118,5 +118,5 @@ for idx_1 in range(2):
             inputs = inputs.to(device)
 
             outputs = netG(inputs)
-            gened_dataset.extend([[idx_1, idx_2, *list(np.around([k*l for k,l in zip(i, norm_dict)])), j] for i ,j in zip(inputs.squeeze().tolist(), outputs.squeeze().tolist())])
+            gened_dataset.extend([[idx_1, idx_2, *list(np.around([k*l for k,l in zip(i, norm_dict)],2)), j] for i ,j in zip(inputs.squeeze().tolist(), outputs.squeeze().tolist())])
 pickle.dump(gened_dataset, open("./source/generated_dataset.pkl","wb"))
