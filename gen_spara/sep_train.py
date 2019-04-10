@@ -117,7 +117,7 @@ for idx_1 in range(2):
                 loss.backward()
                 optimizer.step()
                 # print('\nlabels:\n',labels.detach().numpy(),'\noutputs:\n',outputs.detach().numpy(),'\nloss:\n',loss.detach().numpy())
-                train_loss+=loss.detach().numpy()
+                train_loss+=loss.cpu().detach().numpy()
             # print(len(dataloader))
             train_loss /= len(dataloader)
             if train_loss < min_loss:
