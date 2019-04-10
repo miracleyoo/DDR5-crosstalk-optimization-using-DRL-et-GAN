@@ -80,8 +80,8 @@ class SParaData(Dataset):
     def __getitem__(self, idx):
         norm_dict = self.val_range["high"][2:]
         inputs = np.array([i/j for i,j in zip(self.dataset[idx][2:-1], norm_dict)])
-        inputs = inputs[:,np.newaxis,np.newaxis]
-        labels = self.dataset[idx][-1]/max([self.dataset[i][-1] for i in range(len(self.dataset))])
+        # inputs = inputs[:,np.newaxis,np.newaxis]
+        labels = self.dataset[idx][-1]/self.val_range["icn_range"][1]
         return torch.from_numpy(inputs).float(), np.float32(labels)#torch.from_numpy(labels).float()
 
 device = torch.device("cuda:0" if opt.cuda else "cpu")
