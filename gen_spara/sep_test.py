@@ -17,7 +17,7 @@ from torch.utils.data import Dataset, DataLoader
 from para2icn import *
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataroot', default='../Datasets/direct_expanded_data_channel_comb_to10.pkl', help='path to dataset')
+parser.add_argument('--dataroot', default='../Datasets/matlab_direct_expanded_data_channel_comb_to10.pkl', help='path to dataset')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=0)
 parser.add_argument('--batchSize', type=int, default=256, help='input batch size')
 parser.add_argument('--nz', type=int, default=3, help='size of the input vector')
@@ -89,7 +89,7 @@ criterion = nn.L1Loss()
 DECAY_RATE = 0.9
 lr = opt.lr
 
-PREFIX = "./source/G0/G0NS_sep_L1_New_TO10/"
+PREFIX = "./source/G0/G0_matlab_sep_L1_New_TO10/"
 net_paths = [["netG0_direct_choice_0_0.pth","netG0_direct_choice_0_1.pth"],
 ["netG0_direct_choice_1_0.pth","netG0_direct_choice_1_1.pth"]]
 
@@ -102,7 +102,7 @@ for idx_1 in range(2):
         dataloader = torch.utils.data.DataLoader(dataset, batch_size=opt.batchSize,
                                                 shuffle=True, num_workers=int(opt.workers))
 
-        netG = Generator0NS(ngpu, nz=nz, ngf=ngf, nc=nc).to(device)
+        netG = Generator0(ngpu, nz=nz, ngf=ngf, nc=nc).to(device)
         checkpoint = torch.load(PREFIX+net_paths[idx_1][idx_2], map_location=device.type)
         netG.load_state_dict(checkpoint)
         netG.eval()
@@ -114,3 +114,4 @@ for idx_1 in range(2):
             outputs = netG(inputs)
             loss = criterion(outputs, labels)
             print('labels:',labels.detach().numpy(),' outputs:',outputs.detach().numpy(),' delta:',outputs.detach().numpy()-labels.detach().numpy(), ' loss:',loss.detach().numpy())
+        exit()

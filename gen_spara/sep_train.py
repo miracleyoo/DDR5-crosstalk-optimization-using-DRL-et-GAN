@@ -17,7 +17,7 @@ from torch.utils.data import Dataset, DataLoader
 from para2icn import *
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataroot', default='../Datasets/matlab_direct_expanded_data_channel_comb_to10.pkl', help='path to dataset')
+parser.add_argument('--dataroot', default='../source/generated_dataset.pkl', help='path to dataset')#../Datasets/matlab_direct_expanded_data_channel_comb_to10.pkl'
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=2)
 parser.add_argument('--batchSize', type=int, default=256, help='input batch size')
 parser.add_argument('--nz', type=int, default=3, help='size of the input vector')
@@ -28,18 +28,12 @@ parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam. de
 parser.add_argument('--cuda', action='store_true', help='enables cuda')
 parser.add_argument('--ngpu', type=int, default=1, help='number of GPUs to use')
 parser.add_argument('--netG', default='', help="path to netG (to continue training)")
-parser.add_argument('--outf', default='./source/G0/G0_matlab_sep_L1_NEW_TO10/', help='folder to output images and model checkpoints')
+parser.add_argument('--outf', default='./source/G0/G0_gened_data_sep_L1_NEW_TO10/', help='folder to output images and model checkpoints')
 parser.add_argument('--manualSeed', type=int, help='manual seed')
 
 opt = parser.parse_args()
 print(opt)
 if not os.path.exists(opt.outf): os.makedirs(opt.outf)
-
-# try:
-#     os.makedirs(opt.outf)
-# except OSError:
-#     for item in os.listdir(opt.outf):
-#         os.remove(os.path.join(opt.outf, item))
 
 def log(*args, end=None):
     if end is None:
@@ -75,7 +69,10 @@ class SParaData(Dataset):
             self.dataset = pickle.load(f)
         with open('../source/val_range.pkl','rb') as f:
             self.val_range = pickle.load(f)
+
+        # TEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMP
         self.dataset = [i for i in self.dataset if i[0]==choice[0] and i[1]==choice[1]]
+        # self.dataset = [i for i in self.dataset if i[0]==0 and i[1]==0 and i[3]==1.5]
         
     def __len__(self):
         return len(self.dataset)
@@ -121,13 +118,16 @@ for idx_1 in range(2):
                 optimizer.step()
                 print('\nlabels:\n',labels.detach().numpy(),'\noutputs:\n',outputs.detach().numpy(),'\nloss:\n',loss.detach().numpy())
                 train_loss+=loss.detach().numpy()
-
+            print(len(dataloader))
             train_loss /= len(dataloader)
             if train_loss < min_loss:
                 min_loss = train_loss
                 # do checkpointing
-                torch.save(netG.state_dict(), os.path.join(opt.outf, 'netG0_direct_choice_'+str(idx_1)+'_'+str(idx_2)+'.pth'))
-                log("Better model saved! New training loss:%f"%(train_loss))
 
+                # TEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMP
+                # torch.save(netG.state_dict(), os.path.join(opt.outf, 'netG0_direct_choice_'+str(idx_1)+'_'+str(idx_2)+'.pth'))
+                torch.save(netG.state_dict(), os.path.join(opt.outf, 'netG0_direct_choice_special.pth'))
+                log("Better model saved! New training loss:%f"%(train_loss))
             log('Epoch [%d/%d], Train Loss: %.6f' % (epoch + 1, opt.niter, train_loss))
+        exit()
            
