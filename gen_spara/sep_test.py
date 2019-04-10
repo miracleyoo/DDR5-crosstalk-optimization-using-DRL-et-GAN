@@ -17,7 +17,7 @@ from torch.utils.data import Dataset, DataLoader
 from para2icn import *
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataroot', default='../Datasets/matlab_direct_expanded_data_channel_comb_to10.pkl', help='path to dataset')
+parser.add_argument('--dataroot', default='../Datasets/generated_dataset.pkl', help='path to dataset')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=0)
 parser.add_argument('--batchSize', type=int, default=256, help='input batch size')
 parser.add_argument('--nz', type=int, default=3, help='size of the input vector')

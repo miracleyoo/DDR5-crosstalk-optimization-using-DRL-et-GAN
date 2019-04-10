@@ -28,7 +28,7 @@ parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam. de
 parser.add_argument('--cuda', action='store_true', help='enables cuda')
 parser.add_argument('--ngpu', type=int, default=1, help='number of GPUs to use')
 parser.add_argument('--netG', default='', help="path to netG (to continue training)")
-parser.add_argument('--outf', default='./source/G0/G0_gened_data_sep_L1_NEW_TO10/', help='folder to output images and model checkpoints')
+parser.add_argument('--outf', default='./source/G0/G0_gened_data_sep_L1_NEW_TO10_IMI/', help='folder to output images and model checkpoints')
 parser.add_argument('--manualSeed', type=int, help='manual seed')
 
 opt = parser.parse_args()
@@ -126,7 +126,7 @@ for idx_1 in range(2):
 
                 # TEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMP
                 # torch.save(netG.state_dict(), os.path.join(opt.outf, 'netG0_direct_choice_'+str(idx_1)+'_'+str(idx_2)+'.pth'))
-                torch.save(netG.state_dict(), os.path.join(opt.outf, 'netG0_direct_choice_special.pth'))
+                torch.save(netG.state_dict(), os.path.join(opt.outf, 'netG0_direct_choice_imi'+str(idx_1)+'_'+str(idx_2)+'.pth'))
                 log("Better model saved! New training loss:%f"%(train_loss))
             log('Epoch [%d/%d], Train Loss: %.6f' % (epoch + 1, opt.niter, train_loss))
         exit()
