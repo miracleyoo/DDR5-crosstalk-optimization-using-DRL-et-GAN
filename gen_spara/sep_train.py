@@ -116,9 +116,9 @@ for idx_1 in range(2):
                 loss = criterion(outputs, labels)# - 0.001*torch.sum(torch.log10(outputs))
                 loss.backward()
                 optimizer.step()
-                print('\nlabels:\n',labels.detach().numpy(),'\noutputs:\n',outputs.detach().numpy(),'\nloss:\n',loss.detach().numpy())
+                # print('\nlabels:\n',labels.detach().numpy(),'\noutputs:\n',outputs.detach().numpy(),'\nloss:\n',loss.detach().numpy())
                 train_loss+=loss.detach().numpy()
-            print(len(dataloader))
+            # print(len(dataloader))
             train_loss /= len(dataloader)
             if train_loss < min_loss:
                 min_loss = train_loss
