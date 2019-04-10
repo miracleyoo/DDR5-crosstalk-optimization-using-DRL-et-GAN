@@ -21,7 +21,10 @@ class Generator0(nn.Module):
 
     def forward(self, x):
         x = x.view(-1, self.nz)
-        output = self.main(x)
+        if x.is_cuda and self.ngpu > 1:
+            output = nn.parallel.data_parallel(self.main, x, range(self.ngpu))
+        else:
+            output = self.main(x)
         return output.squeeze()
 
 
@@ -45,7 +48,10 @@ class Generator0NS(nn.Module):
 
     def forward(self, x):
         x = x.view(-1, self.nz)
-        output = self.main(x)
+        if x.is_cuda and self.ngpu > 1:
+            output = nn.parallel.data_parallel(self.main, x, range(self.ngpu))
+        else:
+            output = self.main(x)
         return output.squeeze()
 
 
@@ -70,7 +76,10 @@ class Generator1(nn.Module):
 
     def forward(self, x):
         x = x.view(-1, self.nz)
-        output = self.main(x)
+        if x.is_cuda and self.ngpu > 1:
+            output = nn.parallel.data_parallel(self.main, x, range(self.ngpu))
+        else:
+            output = self.main(x)
         return output.squeeze()
 
 
