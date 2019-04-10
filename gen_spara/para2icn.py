@@ -15,6 +15,7 @@ class Generator0(nn.Module):
             nn.Linear(ngf*2, ngf),
             nn.BatchNorm1d(ngf),
             nn.ReLU(),
+            nn.Dropout(),
             nn.Linear(ngf, 1),
             nn.Sigmoid()
         )
