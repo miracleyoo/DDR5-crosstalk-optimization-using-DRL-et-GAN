@@ -17,7 +17,7 @@ from torch.utils.data import Dataset, DataLoader
 from para2icn import *
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataroot', default='../Datasets/generated_dataset.pkl', help='path to dataset')
+parser.add_argument('--dataroot', default='../source/generated_dataset.pkl', help='path to dataset')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=0)
 parser.add_argument('--batchSize', type=int, default=256, help='input batch size')
 parser.add_argument('--nz', type=int, default=3, help='size of the input vector')
@@ -66,7 +66,7 @@ class SParaData(Dataset):
         """
         with open(opt.dataroot,'rb') as f:
             self.dataset = pickle.load(f)
-        with open('../source/val_range.pkl','rb') as f:
+        with open('../source/val_range_imi.pkl','rb') as f:
             self.val_range = pickle.load(f)
         self.dataset = [i for i in self.dataset if i[0]==choice[0] and i[1]==choice[1]]
         
@@ -77,7 +77,7 @@ class SParaData(Dataset):
         norm_dict = self.val_range["high"][2:]
         inputs = np.array([i/j for i,j in zip(self.dataset[idx][2:-1], norm_dict)])
         inputs = inputs[:,np.newaxis,np.newaxis]
-        labels = self.dataset[idx][-1]/max([self.dataset[i][-1] for i in range(len(self.dataset))])
+        labels = self.dataset[idx][-1]/self.val_range["icn_range"][1]
         return torch.from_numpy(inputs).float(), np.float32(labels)#torch.from_numpy(labels).float()
 
 device = torch.device("cuda:0" if opt.cuda else "cpu")
@@ -89,7 +89,7 @@ criterion = nn.L1Loss()
 DECAY_RATE = 0.9
 lr = opt.lr
 
-PREFIX = "./source/G0/G0_matlab_sep_L1_New_TO10/"
+PREFIX = "./source/G0/G0_gened_data_sep_L1_NEW_TO10_IMI/"
 net_paths = [["netG0_direct_choice_0_0.pth","netG0_direct_choice_0_1.pth"],
 ["netG0_direct_choice_1_0.pth","netG0_direct_choice_1_1.pth"]]
 

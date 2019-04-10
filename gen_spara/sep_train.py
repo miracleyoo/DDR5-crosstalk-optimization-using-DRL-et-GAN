@@ -67,7 +67,7 @@ class SParaData(Dataset):
         """
         with open(opt.dataroot,'rb') as f:
             self.dataset = pickle.load(f)
-        with open('../source/val_range.pkl','rb') as f:
+        with open('../source/val_range_imi.pkl','rb') as f:
             self.val_range = pickle.load(f)
 
         # TEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMPTEMP
