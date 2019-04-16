@@ -1,3 +1,10 @@
+# Author: Zhongyang Zhang
+# E-mail: mirakuruyoo@gmail.com
+
+'''
+Seperately test 4 network according to the c1c2 value and constraint type.
+'''
+
 import argparse
 import os
 import time
@@ -34,12 +41,15 @@ parser.add_argument('--manualSeed', type=int, help='manual seed')
 opt = parser.parse_args()
 print(opt)
 
+
 def log(*args, end=None):
     if end is None:
-        print(time.strftime("==> [%Y-%m-%d %H:%M:%S]", time.localtime()) + " " + "".join([str(s) for s in args]))
+        print(time.strftime("==> [%Y-%m-%d %H:%M:%S]",
+                            time.localtime()) + " " + "".join([str(s) for s in args]))
     else:
         print(time.strftime("==> [%Y-%m-%d %H:%M:%S]", time.localtime()) + " " + "".join([str(s) for s in args]),
               end=end)
+
 
 if opt.manualSeed is None:
     opt.manualSeed = random.randint(1, 10000)
@@ -64,21 +74,25 @@ class SParaData(Dataset):
             transform (callable, optional): Optional transform to be applied
                 on a sample.
         """
-        with open(opt.dataroot,'rb') as f:
+        with open(opt.dataroot, 'rb') as f:
             self.dataset = pickle.load(f)
-        with open('../source/val_range_imi.pkl','rb') as f:
+        with open('../source/val_range_imi.pkl', 'rb') as f:
             self.val_range = pickle.load(f)
-        self.dataset = [i for i in self.dataset if i[0]==choice[0] and i[1]==choice[1]]
-        
+        self.dataset = [i for i in self.dataset if i[0]
+                        == choice[0] and i[1] == choice[1]]
+
     def __len__(self):
         return len(self.dataset)
 
     def __getitem__(self, idx):
         norm_dict = self.val_range["high"][2:]
-        inputs = np.array([i/j for i,j in zip(self.dataset[idx][2:-1], norm_dict)])
-        inputs = inputs[:,np.newaxis,np.newaxis]
+        inputs = np.array(
+            [i/j for i, j in zip(self.dataset[idx][2:-1], norm_dict)])
+        inputs = inputs[:, np.newaxis, np.newaxis]
         labels = self.dataset[idx][-1]/self.val_range["icn_range"][1]
-        return torch.from_numpy(inputs).float(), np.float32(labels)#torch.from_numpy(labels).float()
+        # torch.from_numpy(labels).float()
+        return torch.from_numpy(inputs).float(), np.float32(labels)
+
 
 device = torch.device("cuda:0" if opt.cuda else "cpu")
 ngpu = int(opt.ngpu)
@@ -90,8 +104,8 @@ DECAY_RATE = 0.9
 lr = opt.lr
 
 PREFIX = "./source/G0/G0_gened_data_sep_L1_NEW_TO10_IMI/"
-net_paths = [["netG0_direct_choice_0_0.pth","netG0_direct_choice_0_1.pth"],
-["netG0_direct_choice_1_0.pth","netG0_direct_choice_1_1.pth"]]
+net_paths = [["netG0_direct_choice_0_0.pth", "netG0_direct_choice_0_1.pth"],
+             ["netG0_direct_choice_1_0.pth", "netG0_direct_choice_1_1.pth"]]
 
 log("Start test!")
 
@@ -100,10 +114,11 @@ for idx_1 in range(2):
         min_loss = 1
         dataset = SParaData(opt, (idx_1, idx_2))
         dataloader = torch.utils.data.DataLoader(dataset, batch_size=opt.batchSize,
-                                                shuffle=True, num_workers=int(opt.workers))
+                                                 shuffle=True, num_workers=int(opt.workers))
 
         netG = Generator0(ngpu, nz=nz, ngf=ngf, nc=nc).to(device)
-        checkpoint = torch.load(PREFIX+net_paths[idx_1][idx_2], map_location=device.type)
+        checkpoint = torch.load(
+            PREFIX+net_paths[idx_1][idx_2], map_location=device.type)
         netG.load_state_dict(checkpoint)
         netG.eval()
 
@@ -113,5 +128,6 @@ for idx_1 in range(2):
 
             outputs = netG(inputs)
             loss = criterion(outputs, labels)
-            print('labels:',labels.detach().numpy(),' outputs:',outputs.detach().numpy(),' delta:',outputs.detach().numpy()-labels.detach().numpy(), ' loss:',loss.detach().numpy())
-        exit()
+            print('labels:', labels.detach().numpy(), ' outputs:', outputs.detach().numpy(
+            ), ' delta:', outputs.detach().numpy()-labels.detach().numpy(), ' loss:', loss.detach().numpy())
+        # exit()

@@ -2,6 +2,7 @@
 # E-mail: mirakuruyoo@gmail.com
 
 '''
+Pre-process the data and pack them into a pickle file with a good structure.
 Result Sample: [0, 0, 1.8, 1.5, 80, 0.011582059832497027]
 Meaning: constraint type(0->Constraint, 1->Normal), c1c2 type(0->2010, 1->3020), 
          data rate(n*(10**9)), total length(n*10^3),

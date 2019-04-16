@@ -1,12 +1,22 @@
+# Author: Zhongyang Zhang
+# E-mail: mirakuruyoo@gmail.com
+
+'''
+DQN main file. Can execute test and train process.
+'''
+
 import torch
 import torch.nn as nn
+from copy import deepcopy
 import torch.nn.functional as F
 import numpy as np
 import matplotlib.pyplot as plt
 import copy
 import random
 from tqdm import tqdm
+from time import time
 import pickle
+import argparse
 from torch.utils.data import Dataset, DataLoader
 from env import DDR5
 
@@ -18,9 +28,10 @@ GAMMA = 0.90
 EPISILO = 0.9
 MEMORY_CAPACITY = 512
 Q_NETWORK_ITERATION = 100
-MAX_STEP = 300
+MAX_STEP = 500
 INIT_TRAIN_EPOCH = 5
 INNER_NUM = 256
+OUT_IMG_PATH = './source/result/reward_graph.jpg'
 
 env = DDR5()
 env = env.unwrapped
@@ -28,6 +39,7 @@ NUM_ACTIONS = env.action_space.n
 NUM_STATES = env.observation_space.shape[0]
 ENV_A_SHAPE = 0 if isinstance(
     env.action_space.sample(), int) else env.action_space.sample.shape
+
 
 
 class Net(nn.Module):
@@ -62,7 +74,8 @@ class InitData(Dataset):
         """
         with open('./source/generated_memory_to10.pkl', 'rb') as f:
             self.init_data = pickle.load(f)
-        self.init_data = [i for i in self.init_data if i[0][0]==0 and i[0][1]==0 and i[0][2]==1.8 and i[0][3]==1.5]
+        self.init_data = [i for i in self.init_data if i[0][0] ==
+                          0 and i[0][1] == 0 and i[0][2] == 1.8 and i[0][3] == 1.5]
 
     def __len__(self):
         return len(self.init_data)
@@ -159,19 +172,52 @@ class DQN():
         self.eval_net.eval()
 
 
+def test():
+    ###################################################
+    # Initial Parameters Here
+    ###################################################
+    # state = [0, 0, 1.8, 3, 0]
+    GATE_VAL = 0.1
+    TEST_EPOCH = 100
+    MAX_ROUND = 5000
+    logs = []
+    dqn = DQN()
+    dqn.eval_net.load_state_dict(torch.load(
+        './source/dqn.pth', map_location=device.type))
+    for epoch in TEST_EPOCH:
+        state = env.reset()
+        state_start = deepcopy(state)
+        counter = 0
+        tstart = time()
+        while counter < MAX_STEP:
+            action = dqn.choose_action(state)
+            next_state, reward, done, info = env.step(action)
+            state = next_state
+            counter += 1
+            print(next_state, reward, env.icn)
+            if env.icn < GATE_VAL:
+                break
+        time_ela = time() - tstart
+        logs.append(time_ela, env.icn, counter, state_start)
+        print("Time elapsed:{}".format(time_ela))
+        print("min_icn:", env.min_icn, "min_icn_state:", env.min_icn_state)
+    times = [i[0] for i in logs]
+    print("Avg time:{}".format(sum(times)/len(times)))
+
+
 def main():
     dqn = DQN()
     print("Pretraining on artificial memory...")
-    if INIT_DQN:
-        dqn.init_learn()
-        torch.save(dqn.eval_net.state_dict(), './source/dqn_init_epoch_5.pth')
-    else:
-        dqn.eval_net.load_state_dict(
-            torch.load('./source/dqn_init_epoch_5.pth'))
-        dqn.target_net.load_state_dict(dqn.eval_net.state_dict())
-    episodes = 400
+    # if INIT_DQN:
+    #     dqn.init_learn()
+    #     torch.save(dqn.eval_net.state_dict(), './source/dqn_init_epoch_5.pth')
+    # else:
+    #     dqn.eval_net.load_state_dict(
+    #         torch.load('./source/dqn_init_epoch_5.pth'))
+    # dqn.target_net.load_state_dict(dqn.eval_net.state_dict())
+    episodes = 200
     print("Collecting Experience....")
-    reward_list = []
+    reward_list = [0]
     plt.ion()
     fig, ax = plt.subplots()
     for i in range(episodes):
@@ -195,13 +241,21 @@ def main():
             counter += 1
         print("min_icn:", env.min_icn, "min_icn_state:", env.min_icn_state)
         r = copy.copy(reward)
-        reward_list.append(r)
-        ax.set_xlim(0, 300)
-        #ax.cla()
+        reward_list.append(r+reward_list[-1])
+        ax.set_xlim(0, episodes)
         ax.plot(reward_list, 'g-', label='total_loss')
         plt.pause(0.001)
-    torch.save(dqn.state_dict(), './source/dqn.pth')
+    plt.savefig(OUT_IMG_PATH, format='jpg', dpi=1000)
+    torch.save(dqn.eval_net.state_dict(), './source/dqn.pth')
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--test', action='store_true', help='IF Test')
+    opt = parser.parse_args()
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    print(opt)
+    if opt.test:
+        test()
+    else:
+        main()

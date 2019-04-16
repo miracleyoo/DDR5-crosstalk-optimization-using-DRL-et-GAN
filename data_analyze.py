@@ -1,3 +1,10 @@
+# Author: Zhongyang Zhang
+# E-mail: mirakuruyoo@gmail.com
+
+'''
+Data analysis. 
+'''
+
 # %%
 import pickle as pkl
 import os

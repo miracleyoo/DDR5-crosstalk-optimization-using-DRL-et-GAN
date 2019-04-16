@@ -1,8 +1,9 @@
-"""
-Classic cart-pole system implemented by Rich Sutton et al.
-Copied from http://incompleteideas.net/sutton/book/code/pole.c
-permalink: https://perma.cc/C9ZM-652R
-"""
+# Author: Zhongyang Zhang
+# E-mail: mirakuruyoo@gmail.com
+
+'''
+The main environment of the project. 
+'''
 
 import math
 import gym
@@ -24,8 +25,8 @@ class DDR5(gym.Env):
         self.low = np.array(self.val_range["low"])
         self.high = np.array(self.val_range["high"])
 
-        # Action: 0->No Action 1->-num_tab 2->+num_tab 3->change_c1c2
-        self.action_space = spaces.Discrete(3)
+        # Action: 0->No Action 1->-num_tab 2->+num_tab 3->-length 4->+length 5->change_c1c2
+        self.action_space = spaces.Discrete(6)
         self.observation_space = spaces.Box(
             self.low, self.high, dtype=np.float32)
         self.reward_range = (-2, 2)
@@ -105,9 +106,17 @@ class DDR5(gym.Env):
             if tab_num > self.high[-1]:
                 tab_num -= 2
         elif action == 3:
+            trace_len -= 0.1
+            if np.around(trace_len, 2) < self.low[-2]:
+                trace_len += 0.2
+        elif action == 4:
+            trace_len += 0.1
+            if np.around(trace_len, 2) > self.high[-2]:
+                trace_len -= 0.2
+        elif action == 5:
             c1c2 = int(not c1c2)
 
-        self.state = (spacing, c1c2, dr, trace_len, tab_num)
+        self.state = (spacing, c1c2, dr, np.around(trace_len, 2), tab_num)
 
         done = False
         self.icn = self.get_icn()
@@ -115,16 +124,24 @@ class DDR5(gym.Env):
             self.min_icn = self.icn
             self.min_icn_state = self.state
         # -0.1*(self.last_icn == self.icn)
-        reward = min(max((self.last_icn - self.icn)*10e2, -1), 1)
+        reward = min(max((self.last_icn - self.icn)*10e2, -1), 1) - \
+            0.05*(self.last_icn == self.icn)
         self.last_icn = self.icn
 
         return np.array(self.state), reward, done, {}
 
-    def reset(self):
+    def reset(self, init_state=None):
         # self.state = [self.np_random.randint(self.low[i],self.high[i]) for i in range(len(self.high))]
-        self.state = [0, 0, 1.8, 1.5, self.np_random.randint(
-            self.low[-1], self.high[-1])]
-
+        if init_state is None:
+            self.state = [0, 0, np.around(0.1*self.np_random.randint(10*self.low[2], 10*self.high[2])),
+                          np.around(0.1*self.np_random.randint(10 * self.low[3], 10*self.high[3]), 2),
+                          self.np_random.randint(self.low[4], self.high[4])]
+        else:
+            try:
+                self.state = init_state
+            except (AttributeError, TypeError):
+                raise AssertionError(
+                    'Input init_state should be a state array!')
         self.steps_beyond_done = None
         self.last_icn = self.get_icn()
         return np.array(self.state)

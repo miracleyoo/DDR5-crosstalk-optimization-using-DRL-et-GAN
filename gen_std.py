@@ -1,3 +1,10 @@
+# Author: Zhongyang Zhang
+# E-mail: mirakuruyoo@gmail.com
+
+'''
+Generate dataset from the ground truth network and pack them into a pickle file.
+'''
+
 import argparse
 import os
 import time

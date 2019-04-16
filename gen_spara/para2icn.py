@@ -1,3 +1,10 @@
+# Author: Zhongyang Zhang
+# E-mail: mirakuruyoo@gmail.com
+
+'''
+Models used in the generating network.
+'''
+
 import torch.nn as nn
 
 class Generator0(nn.Module):
