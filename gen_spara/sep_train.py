@@ -24,7 +24,7 @@ from torch.utils.data import Dataset, DataLoader
 from para2icn import *
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataroot', default='../source/generated_dataset.pkl', help='path to dataset')#../Datasets/matlab_direct_expanded_data_channel_comb_to10.pkl'
+parser.add_argument('--dataroot', default='../source/generated_dataset.pkl', help='path to dataset')#'../Datasets/matlab_direct_expanded_data_channel_comb_to10.pkl')#../Datasets/matlab_direct_expanded_data_channel_comb_to10.pkl'
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=2)
 parser.add_argument('--batchSize', type=int, default=256, help='input batch size')
 parser.add_argument('--nz', type=int, default=3, help='size of the input vector')
@@ -35,7 +35,7 @@ parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam. de
 parser.add_argument('--cuda', action='store_true', help='enables cuda')
 parser.add_argument('--ngpu', type=int, default=1, help='number of GPUs to use')
 parser.add_argument('--netG', default='', help="path to netG (to continue training)")
-parser.add_argument('--outf', default='./source/G0/G0_gened_data_sep_L1_NEW_TO10_IMI/', help='folder to output images and model checkpoints')
+parser.add_argument('--outf', default='./source/G0/G0_gened_data_sep_L1_NEW_TO10_IMI_2/', help='folder to output images and model checkpoints')
 parser.add_argument('--manualSeed', type=int, help='manual seed')
 
 opt = parser.parse_args()
