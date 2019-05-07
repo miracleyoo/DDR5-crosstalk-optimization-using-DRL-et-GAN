@@ -15,13 +15,13 @@ class Generator0(nn.Module):
         self.main = nn.Sequential(
             nn.Linear(nz, ngf*4),
             nn.BatchNorm1d(ngf*4),
-            nn.ReLU(),
+            nn.LeakyReLU(),
             nn.Linear(ngf*4, ngf*2),
             nn.BatchNorm1d(ngf*2),
-            nn.ReLU(),
+            nn.LeakyReLU(),
             nn.Linear(ngf*2, ngf),
             nn.BatchNorm1d(ngf),
-            nn.ReLU(),
+            nn.LeakyReLU(),
             nn.Linear(ngf, 1),
             nn.Sigmoid()
         )
@@ -60,6 +60,35 @@ class Generator0NS(nn.Module):
         else:
             output = self.main(x)
         return output.squeeze()
+
+
+class Generator0STD(nn.Module):
+    def __init__(self, ngpu=1, nz=3, ngf=8, nc=2):
+        super(Generator0STD, self).__init__()
+        self.nz = nz
+        self.ngpu = ngpu
+        self.main = nn.Sequential(
+            nn.Linear(nz, ngf*4),
+            nn.BatchNorm1d(ngf*4),
+            nn.ReLU(),
+            nn.Linear(ngf*4, ngf*2),
+            nn.BatchNorm1d(ngf*2),
+            nn.ReLU(),
+            nn.Linear(ngf*2, ngf),
+            nn.BatchNorm1d(ngf),
+            nn.ReLU(),
+            nn.Linear(ngf, 1),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x):
+        x = x.view(-1, self.nz)
+        if x.is_cuda and self.ngpu > 1:
+            output = nn.parallel.data_parallel(self.main, x, range(self.ngpu))
+        else:
+            output = self.main(x)
+        return output.squeeze()
+
 
 
 class Generator1(nn.Module):
@@ -113,6 +142,7 @@ class Generator2(nn.Module):
         )
 
     def forward(self, x):
+        x = x.view(-1, self.nz, 1, 1)
         if x.is_cuda and self.ngpu > 1:
             output = nn.parallel.data_parallel(self.main1, x, range(self.ngpu))
             output = output.view(-1, self.nc*8*8)

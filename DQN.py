@@ -9,8 +9,6 @@ import torch
 import torch.nn as nn
 from copy import deepcopy
 import torch.nn.functional as F
-import numpy as np
-import matplotlib.pyplot as plt
 import copy
 import random
 from tqdm import tqdm
@@ -19,16 +17,24 @@ import pickle
 import argparse
 from torch.utils.data import Dataset, DataLoader
 from env import DDR5
+import pandas as pd
+import numpy as np                                                                                                                            
+import seaborn as sns                                             
+import matplotlib.pyplot as plt
+sns.set()
+sns.set_context("paper", font_scale=1.4)
+
 
 # hyper-parameters
 INIT_DQN = False
-BATCH_SIZE = 256
-LR = 0.001
+BATCH_SIZE = 1024
+LR = 0.0001
 GAMMA = 0.90
 EPISILO = 0.9
-MEMORY_CAPACITY = 512
+EPISODES = 2000
+MEMORY_CAPACITY = 4096
 Q_NETWORK_ITERATION = 100
-MAX_STEP = 500
+MAX_STEP = 256
 INIT_TRAIN_EPOCH = 5
 INNER_NUM = 256
 OUT_IMG_PATH = './source/result/reward_graph.jpg'
@@ -177,32 +183,33 @@ def test():
     # Initial Parameters Here
     ###################################################
     # state = [0, 0, 1.8, 3, 0]
-    GATE_VAL = 0.1
+    GATE_VAL = 0.15
     TEST_EPOCH = 100
-    MAX_ROUND = 5000
+    MAX_ROUND = 500
     logs = []
     dqn = DQN()
     dqn.eval_net.load_state_dict(torch.load(
-        './source/dqn.pth', map_location=device.type))
-    for epoch in TEST_EPOCH:
+        './source/dqn_1.pth', map_location=device.type))
+    for epoch in range(TEST_EPOCH):
         state = env.reset()
         state_start = deepcopy(state)
         counter = 0
         tstart = time()
-        while counter < MAX_STEP:
+        while counter < MAX_ROUND:
             action = dqn.choose_action(state)
             next_state, reward, done, info = env.step(action)
             state = next_state
             counter += 1
             print(next_state, reward, env.icn)
-            if env.icn < GATE_VAL:
+            if done:
                 break
         time_ela = time() - tstart
-        logs.append(time_ela, env.icn, counter, state_start)
+        logs.append([time_ela, env.icn, env.min_icn, counter, state_start])
         print("Time elapsed:{}".format(time_ela))
         print("min_icn:", env.min_icn, "min_icn_state:", env.min_icn_state)
     times = [i[0] for i in logs]
     print("Avg time:{}".format(sum(times)/len(times)))
+    pickle.dump(logs, open("./source/dqn_test_log.pkl",'wb'))
 
 
 def main():
@@ -215,12 +222,12 @@ def main():
     #     dqn.eval_net.load_state_dict(
     #         torch.load('./source/dqn_init_epoch_5.pth'))
     # dqn.target_net.load_state_dict(dqn.eval_net.state_dict())
-    episodes = 200
     print("Collecting Experience....")
-    reward_list = [0]
+    reward_list = []
+    logs = []
     plt.ion()
     fig, ax = plt.subplots()
-    for i in range(episodes):
+    for i in range(EPISODES):
         state = env.reset()
         ep_reward = 0
         counter = 0
@@ -230,23 +237,29 @@ def main():
             print(next_state, reward, env.icn)
             dqn.store_transition(state, action, reward, next_state)
             ep_reward += reward
-            if dqn.memory_counter >= MEMORY_CAPACITY:
-                dqn.learn()
-                if done:
-                    print("episode: {} , the episode reward is {}".format(
-                        i, round(ep_reward, 3)))
             if done:
+                print("episode: {} , the episode reward is {}".format(
+                        i, round(ep_reward, 3)))
                 break
             state = next_state
             counter += 1
+        if dqn.memory_counter >= MEMORY_CAPACITY:
+            dqn.learn()
         print("min_icn:", env.min_icn, "min_icn_state:", env.min_icn_state)
-        r = copy.copy(reward)
-        reward_list.append(r+reward_list[-1])
-        ax.set_xlim(0, episodes)
-        ax.plot(reward_list, 'g-', label='total_loss')
+        if counter==1:
+            i -= 1
+            continue
+        else:
+            reward_list.append(ep_reward/(counter+1))#(r+reward_list[-1])
+            logs.append((state, action, reward, next_state, env.icn, env.min_icn, counter, reward_list[-1]))
+        ax.clear()
+        ax.set_xlim(0, EPISODES)
+        sns.lineplot(x='x',y='y',data=pd.DataFrame({'x':list(range(len(reward_list))),'y':reward_list}),ax=ax)
+        # ax.plot(reward_list, '-', color='steelblue', label='total_loss')
         plt.pause(0.001)
-    plt.savefig(OUT_IMG_PATH, format='jpg', dpi=1000)
-    torch.save(dqn.eval_net.state_dict(), './source/dqn.pth')
+    plt.savefig(OUT_IMG_PATH, format='png', dpi=1000)
+    torch.save(dqn.eval_net.state_dict(), './source/dqn_1.pth')
+    pickle.dump(logs, open("./source/dqn_train_log.pkl",'wb'))
 
 
 if __name__ == '__main__':

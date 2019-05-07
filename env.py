@@ -26,7 +26,7 @@ class DDR5(gym.Env):
         self.high = np.array(self.val_range["high"])
 
         # Action: 0->No Action 1->-num_tab 2->+num_tab 3->-length 4->+length 5->change_c1c2
-        self.action_space = spaces.Discrete(6)
+        self.action_space = spaces.Discrete(5)
         self.observation_space = spaces.Box(
             self.low, self.high, dtype=np.float32)
         self.reward_range = (-2, 2)
@@ -95,31 +95,34 @@ class DDR5(gym.Env):
         spacing, c1c2, dr, trace_len, tab_num = self.state
 
         # computation
+        # if action == 0:
+        #    pass
         if action == 0:
-           pass
-        elif action == 1:
             tab_num -= 1
             if tab_num < self.low[-1]:
                 tab_num += 2
-        elif action == 2:
+        elif action == 1:
             tab_num += 1
             if tab_num > self.high[-1]:
                 tab_num -= 2
-        elif action == 3:
+        elif action == 2:
             trace_len -= 0.1
             if np.around(trace_len, 2) < self.low[-2]:
                 trace_len += 0.2
-        elif action == 4:
+        elif action == 3:
             trace_len += 0.1
             if np.around(trace_len, 2) > self.high[-2]:
                 trace_len -= 0.2
-        elif action == 5:
+        elif action == 4:
             c1c2 = int(not c1c2)
 
         self.state = (spacing, c1c2, dr, np.around(trace_len, 2), tab_num)
 
-        done = False
         self.icn = self.get_icn()
+        if self.icn<=0.1:
+            done = True
+        else:
+            done = False
         if self.icn < self.min_icn:
             self.min_icn = self.icn
             self.min_icn_state = self.state
@@ -133,15 +136,16 @@ class DDR5(gym.Env):
     def reset(self, init_state=None):
         # self.state = [self.np_random.randint(self.low[i],self.high[i]) for i in range(len(self.high))]
         if init_state is None:
-            self.state = [0, 0, np.around(0.1*self.np_random.randint(10*self.low[2], 10*self.high[2])),
-                          np.around(0.1*self.np_random.randint(10 * self.low[3], 10*self.high[3]), 2),
-                          self.np_random.randint(self.low[4], self.high[4])]
+            self.state = [self.np_random.randint(2), self.np_random.randint(2), np.around(0.1*self.np_random.randint(10*self.low[2], 10*self.high[2]+1)),
+                          np.around(0.1*self.np_random.randint(10 * self.low[3], 10*self.high[3]+1), 2),
+                          self.np_random.randint(self.low[4], self.high[4]+1)]
         else:
             try:
                 self.state = init_state
             except (AttributeError, TypeError):
                 raise AssertionError(
                     'Input init_state should be a state array!')
+        self.min_icn = 1
         self.steps_beyond_done = None
         self.last_icn = self.get_icn()
         return np.array(self.state)
