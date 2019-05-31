@@ -143,3 +143,22 @@ sns.lineplot(x=list(range(len(icns))),y=icns,alpha=0.8, ax=ax)
 ax.set_title("Best ICN value in Each Exploration")
 ax.set_ylabel("Min ICN")    
 ax.set_xlabel('Epoch')
+
+#%%
+v_log = pickle.load(open("./source/dqn_test_log.pkl",'rb'))
+v_icns = [float(i[-2]) for i in v_log]
+print("==> Test Num <= 0.1:", sum([1 for i in v_icns if i<=0.1]))
+print("==> Test Num <= 0.15:", sum([1 for i in v_icns if 0.1<i<=0.15]))
+print("==> Test Num <= 0.2:", sum([1 for i in v_icns if 0.15<i<=0.2]))
+print("==> Test Num <= 0.3:", sum([1 for i in v_icns if 0.2<i<=0.3]))
+print("==> Train Num > 0.3:", sum([1 for i in v_icns if i>0.3]))
+print("Test sum:", len(v_log),"\n")
+
+t_log = pickle.load(open("./source/dqn_train_log.pkl",'rb'))
+t_icns = [float(i[-3]) for i in t_log]
+print("==> Train Num <= 0.1:", sum([1 for i in t_icns if i<=0.1]))
+print("==> Train Num <= 0.15:", sum([1 for i in t_icns if 0.1<i<=0.15]))
+print("==> Train Num <= 0.2:", sum([1 for i in t_icns if 0.15<i<=0.2]))
+print("==> Train Num <= 0.3:", sum([1 for i in t_icns if 0.2<i<=0.3]))
+print("==> Train Num > 0.3:", sum([1 for i in t_icns if i>0.3]))
+print("Train sum:", len(t_log),"\n")

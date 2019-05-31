@@ -127,8 +127,7 @@ class DDR5(gym.Env):
             self.min_icn = self.icn
             self.min_icn_state = self.state
         # -0.1*(self.last_icn == self.icn)
-        reward = min(max((self.last_icn - self.icn)*10e2, -1), 1) - \
-            0.05*(self.last_icn == self.icn)
+        reward = min(max((self.last_icn - self.icn)*10e2, -1), 1)# - 0.05*(self.last_icn == self.icn)
         self.last_icn = self.icn
 
         return np.array(self.state), reward, done, {}
